@@ -10,7 +10,9 @@ a BOSGAME M5 AI Mini (AMD Ryzen AI Max+ 395, 128 GB unified RAM/VRAM).
 > **What people say about HAL-10k!**
 > 
 > *"That low-class clown... he is a genius!" — Vegeta*
+> 
 > *"AI Singularity, in the palm of your hand!" — Doc Oc*
+> 
 > *"A shadowy flight into the dangerous world of a man who does not exist!"* — K.I.T.T.
 
 ## Purpose
