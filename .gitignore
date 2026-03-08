@@ -1,0 +1,34 @@
+# Secrets — plaintext files (encrypted .enc.yaml files ARE committed)
+secrets/*.yaml
+!secrets/*.enc.yaml
+secrets/*.env
+/srv/platform/secrets/
+
+# Environment files — only .example variants are committed
+.env
+*.env
+!*.env.example
+
+# age private keys
+*.age
+.age-key*
+~/.config/sops/age/
+
+# Docker / runtime artifacts
+**/__pycache__/
+*.pyc
+*.log
+
+# Editor artifacts
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Pipeline work directories (research artifacts)
+_work/

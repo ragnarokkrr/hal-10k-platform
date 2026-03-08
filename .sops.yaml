@@ -1,0 +1,8 @@
+# SOPS encryption configuration
+# Replace the age public key with the actual key generated during bootstrap/06
+# Run: age-keygen -o ~/.config/sops/age/keys.txt && cat ~/.config/sops/age/keys.txt
+
+creation_rules:
+  - path_regex: secrets/.*\.enc\.yaml$
+    age: >-
+      age1REPLACE_WITH_YOUR_AGE_PUBLIC_KEY
