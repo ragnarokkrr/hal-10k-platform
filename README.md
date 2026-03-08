@@ -3,6 +3,16 @@
 Infrastructure-as-code and runbooks for the **HAL-10k Self-Hosted AI Server** running on
 a BOSGAME M5 AI Mini (AMD Ryzen AI Max+ 395, 128 GB unified RAM/VRAM).
 
+> **HAL-10k! Self-Hosted AI Server**
+> 
+> HAL-10k - HAL-9000 went Super Saiyan 4. Power level: 10,000!
+
+> **What people say about HAL-10k!**
+> 
+> *"That low-class clown... he is a genius!" — Vegeta*
+> *"AI Singularity, in the palm of your hand!" — Doc Oc*
+> *"A shadowy flight into the dangerous world of a man who does not exist!"* — K.I.T.T.
+
 ## Purpose
 
 This repository is the versioned source of truth for everything deployed on HAL-10k:
