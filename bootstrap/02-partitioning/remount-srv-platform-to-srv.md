@@ -22,7 +22,7 @@ Context: [[create-srv-platform-partition-gparted-live|Create /srv/platform Parti
 ```bash
 sudo systemctl stop docker
 # Verify nothing is using the mount
-lsof +D /srv/platform
+sudo lsof +D /srv/platform 2>/dev/null | wc -l
 ```
 
 ## Step 2 — Unmount the partition from its current location
@@ -38,7 +38,7 @@ sudo umount /srv/platform
 sudo mkdir -p /mnt/platform-tmp
 # Find device name (look for 'platform' label or ext4 ~1.3T)
 lsblk -f
-sudo mount /dev/nvme0n1p5 /mnt/platform-tmp
+sudo mount UUID=<PARTITION_UUID> /mnt/platform-tmp
 ```
 
 ## Step 4 — Create the `platform/` subdirectory inside the partition
@@ -50,7 +50,7 @@ sudo mkdir -p /mnt/platform-tmp/platform
 ## Step 5 — Move all top-level directories into `platform/`
 
 ```bash
-for dir in backups compose databases datasets docker dockge logs models stacks vector; do
+for dir in backups  compose  databases  datasets  docker  dockge  logs  lost+found  models  stacks  vector  volumes; do
   [ -d /mnt/platform-tmp/$dir ] && sudo mv /mnt/platform-tmp/$dir /mnt/platform-tmp/platform/
 done
 ```
