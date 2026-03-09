@@ -33,7 +33,19 @@ Seed the repository structure and establish the secrets management baseline.
 
 ---
 
-## Phase 2 — Core Networking (Traefik)
+## Phase 2 — Spec-Kit / Open-Spec ADD Automation
+
+Automate Compose stack generation from declarative service specifications.
+
+- [ ] Evaluate Spec-Kit vs Open-Spec ADD for stack generation
+- [ ] Author `specs/` directory with ADD specs for each service
+- [ ] `docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md`
+- [ ] Integrate spec generation into the WORKFLOW (generate → review → deploy)
+- [ ] Retrofit existing stacks with ADD specs (retroactive documentation)
+
+---
+
+## Phase 3 — Core Networking (Traefik)
 
 Deploy the reverse proxy as the entry point for all services.
 
@@ -46,7 +58,7 @@ Deploy the reverse proxy as the entry point for all services.
 
 ---
 
-## Phase 3 — AI Inference Stack
+## Phase 4 — AI Inference Stack
 
 Deploy LLM serving and the web UI.
 
@@ -60,7 +72,7 @@ Deploy LLM serving and the web UI.
 
 ---
 
-## Phase 4 — Data & Vector Store
+## Phase 5 — Data & Vector Store
 
 Persistent storage layer for embeddings and RAG pipelines.
 
@@ -72,7 +84,7 @@ Persistent storage layer for embeddings and RAG pipelines.
 
 ---
 
-## Phase 5 — Workflow Automation (n8n)
+## Phase 6 — Workflow Automation (n8n)
 
 Orchestration layer for AI pipelines and integrations.
 
@@ -83,7 +95,7 @@ Orchestration layer for AI pipelines and integrations.
 
 ---
 
-## Phase 6 — Implementing Gitea (Self-Hosted Git)
+## Phase 7 — Implementing Gitea (Self-Hosted Git)
 
 Replace GitHub dependency with an on-prem git server for full self-sufficiency.
 
@@ -97,7 +109,7 @@ Replace GitHub dependency with an on-prem git server for full self-sufficiency.
 
 ---
 
-## Phase 7 — Observability
+## Phase 8 — Observability
 
 Monitoring and log aggregation for all services.
 
@@ -106,18 +118,6 @@ Monitoring and log aggregation for all services.
 - [ ] `docs/runbooks/observability.md`
 - [ ] Grafana dashboards: GPU utilization (ROCm), container resources, model latency
 - [ ] Alerting: disk space on `/srv/platform`, GPU temperature
-
----
-
-## Phase 8 — Spec-Kit / Open-Spec ADD Automation
-
-Automate Compose stack generation from declarative service specifications.
-
-- [ ] Evaluate Spec-Kit vs Open-Spec ADD for stack generation
-- [ ] Author `specs/` directory with ADD specs for each service
-- [ ] `docs/decisions/adr/ADR-0006-compose-generation-spec-kit.md`
-- [ ] Integrate spec generation into the WORKFLOW (generate → review → deploy)
-- [ ] Retrofit existing stacks with ADD specs (retroactive documentation)
 
 ---
 
