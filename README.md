@@ -36,6 +36,8 @@ This repository is the versioned source of truth for everything deployed on HAL-
 | Storage | 2 TB NVMe SSD |
 | OS | Pop!_OS 24.x LTS |
 
+See [docs/hardware/bosgame-m5-ai-specs.md](docs/hardware/bosgame-m5-ai-specs.md) for full hardware specifications.
+
 ## Disk Layout
 
 | Partition | Mount | Size | Purpose |
