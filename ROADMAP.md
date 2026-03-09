@@ -24,12 +24,12 @@ No automation required; these are point-in-time reference procedures.
 
 Seed the repository structure and establish the secrets management baseline.
 
-- [ ] Initialize git repository and push to GitHub (`hal-10k-platform`)
-- [ ] Add `.gitignore`, `.sops.yaml`, `secrets/.gitkeep`
-- [ ] Author `bootstrap/06-secrets-sops-age/runbook.md`
-- [ ] Create `scripts/secrets-decrypt.sh` and `scripts/secrets-encrypt.sh`
-- [ ] Add `docs/decisions/adr/ADR-0001-secrets-management-sops-age.md`
-- [ ] Add `docs/architecture/platform-overview.md`
+- [x] Initialize git repository and push to GitHub (`hal-10k-platform`)
+- [x] Add `.gitignore`, `.sops.yaml`, `secrets/.gitkeep`
+- [x] Author `bootstrap/06-secrets-sops-age/runbook.md`
+- [x] Create `scripts/secrets-decrypt.sh` and `scripts/secrets-encrypt.sh`
+- [x] Add `docs/decisions/adr/ADR-0001-secrets-management-sops-age.md`
+- [x] Add `docs/architecture/platform-overview.md`
 
 ---
 
