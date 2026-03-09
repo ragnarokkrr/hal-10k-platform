@@ -121,6 +121,24 @@ Automate Compose stack generation from declarative service specifications.
 
 ---
 
+## Phase 9 — Experimentation Layer (Distrobox)
+
+Establish the Experimentation Layer as a formal, documented tier of the HAL-10k lab
+for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podman) at
+`/srv/experiments/` — separate from the Docker Platform Layer.
+
+- [ ] Install Podman + Distrobox on HAL-10k (**future**)
+- [ ] Create `/srv/experiments/` directory convention (**future**)
+- [ ] Author `/srv/experiments/create.sh` — version-controlled container creation commands (**future**)
+- [ ] Create standard containers: `ml-lab`, `llama-build`, `agents-dev`, `ragna-ml` (**future**)
+- [ ] Bootstrap `ragna-ml` JupyterLab container (**future**)
+- [ ] Validate iGPU passthrough inside a container (`clinfo`, `vulkaninfo`) (**future**)
+- [ ] Test llama.cpp Vulkan build inside `llama-build` (**future**)
+- [ ] Evaluate LM Studio API vs Ollama for experiment-layer model serving (**future**)
+- [ ] `docs/runbooks/experimentation-layer-setup.md` — full implementation steps (**future**)
+
+---
+
 ## Backlog / Future
 
 - Automated backup rotation scripts (`scripts/backup-*.sh`)

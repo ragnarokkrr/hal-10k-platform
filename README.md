@@ -59,6 +59,38 @@ This repository is the versioned source of truth for everything deployed on HAL-
 └── secrets/         # Runtime secrets (populated by SOPS decrypt)
 ```
 
+## Two-Layer Architecture
+
+HAL-10k runs two distinct, isolated layers. The **Platform Layer** hosts stable production
+services under Docker Compose. The **Experimentation Layer** hosts disposable, GPU-accelerated
+ML environments under Distrobox (rootless Podman). Experiments that prove stable and valuable
+graduate to the Platform Layer after meeting the four graduation criteria (daily use, config
+stabilized, reboot persistence, documented in runbook).
+
+```
+/srv/platform/                    ← Platform Layer (Docker Compose)
+├── compose/                      # Live Compose stacks
+├── docker/                       # Docker data-root
+├── models/                       # LLM model weights (Ollama, LM Studio)
+├── datasets/                     # Training and evaluation datasets
+├── vectordb/                     # ChromaDB persistent storage
+├── backups/                      # Application-level backups
+└── secrets/                      # Runtime secrets (SOPS-decrypted)
+
+/srv/experiments/                 ← Experimentation Layer (Distrobox)
+├── create.sh                     # Version-controlled container creation commands
+├── ml-lab/                       # Python 3.12, PyTorch stable, Transformers
+├── llama-build/                  # C++, CMake, ROCm, Vulkan SDK
+├── agents-dev/                   # LangChain, CrewAI, AutoGen
+├── ragna-ml/                     # JupyterLab + ML baseline stack
+└── torch-nightly/                # PyTorch nightly (isolated)
+```
+
+See [docs/architecture/experimentation-layer.md](docs/architecture/experimentation-layer.md)
+for the full architecture, design principles, lifecycle diagram, and graduation criteria.
+
+---
+
 ## Service Inventory
 
 | Service | URL | Status |
