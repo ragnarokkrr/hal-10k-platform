@@ -109,7 +109,10 @@ example_api_key: "sk-test-xxxx"
 EOF
 
 # Encrypt with SOPS
-sops --encrypt /tmp/test-secret.yaml > secrets/test.enc.yaml
+sops --encrypt \
+  --filename-override secrets/test.enc.yaml \
+  /tmp/test-secret.yaml \
+  > secrets/test.enc.yaml
 rm /tmp/test-secret.yaml
 
 # Verify encryption
