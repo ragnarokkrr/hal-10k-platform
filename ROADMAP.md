@@ -12,11 +12,11 @@ No automation required; these are point-in-time reference procedures.
 
 - [x] `bootstrap/00-hardware-bios/` — BIOS tuning runbook (UMA, EXPO, power limits)
 - [x] `bootstrap/01-os-install/` — Pop!_OS 24.x + XFCE + XRDP + Remmina + VSCode
-- [x] `bootstrap/02-partitioning/` — GParted Live partitioning + /srv/platform layout
+- [x] `bootstrap/02-partitioning/` — GParted Live partitioning + /srv/platform layout + new partitioning to support /srv/experiments 
 - [x] `bootstrap/03-rocm/` — ROCm 7.2 installation and verification
 - [x] `bootstrap/04-timeshift/` — Timeshift RSYNC config and retention policy
 - [x] `bootstrap/05-docker/` — Docker CE + Portainer + Dockge + data-root relocation
-- [ ] `bootstrap/06-secrets-sops-age/` — SOPS + age installation and key setup (**manual runbook**)
+- [x] `bootstrap/06-secrets-sops-age/` — SOPS + age installation and key setup (**manual runbook**)
 
 ---
 
