@@ -1,5 +1,7 @@
 # hal-10k-platform
 
+<img src="docs/assets/HAL-10k.png" alt="HAL-10k Self-Hosted AI Server" width="600"/>
+
 Infrastructure-as-code and runbooks for the **HAL-10k Self-Hosted AI Server** running on
 a BOSGAME M5 AI Mini (AMD Ryzen AI Max+ 395, 128 GB unified RAM/VRAM).
 
@@ -99,7 +101,7 @@ for the full architecture, design principles, lifecycle diagram, and graduation 
 |---------|-----|--------|
 | Portainer | https://hal-10k:9443 | ✅ Running |
 | Dockge | http://hal-10k:5001 | ✅ Running |
-| Traefik | http://hal-10k:8080 | 🔜 Planned |
+| Traefik | http://hal-10k:8080 | ✅ Running  |
 | Ollama | http://hal-10k:11434 | 🔜 Planned |
 | Open WebUI | http://hal-10k:3000 | 🔜 Planned |
 | LiteLLM | http://hal-10k:4000 | 🔜 Planned |
