@@ -1,0 +1,45 @@
+# Traefik v3 — static configuration
+# Loaded at startup; requires container restart on changes.
+
+# Entrypoints
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+  dashboard:
+    address: ":8080"
+
+# Docker provider
+# Endpoint points to docker-socket-proxy (see ADR-0005), not the raw socket.
+providers:
+  docker:
+    endpoint: "tcp://docker-socket-proxy:2375"
+    exposedByDefault: false
+    network: traefik
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# API / dashboard
+api:
+  dashboard: true
+  insecure: false
+
+# Logging
+log:
+  level: INFO
+
+# Access logs
+accessLog: {}
+
+# Ping endpoint (used by Docker healthcheck)
+# Bound to the dashboard entrypoint to avoid conflicting with the internal :8080 default.
+ping:
+  entryPoint: "dashboard"

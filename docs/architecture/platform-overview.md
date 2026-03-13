@@ -126,17 +126,31 @@ sops encrypt → secrets/*.enc.yaml  (committed to git)
 
 ## Network
 
-| Service | Port | Access |
-|---------|------|--------|
-| Traefik HTTP | 80 | LAN |
-| Traefik HTTPS | 443 | LAN |
-| Traefik Dashboard | 8080 | LAN |
-| Portainer | 9443 | LAN |
-| Dockge | 5001 | LAN |
-| Ollama | 11434 | Internal / Traefik |
-| LiteLLM | 4000 | Internal / Traefik |
-| Open WebUI | 3000 | Traefik |
-| ChromaDB | 8000 | Internal |
-| n8n | 5678 | Traefik |
-| Gitea | 3001 | Traefik |
-| XRDP | 3389 | LAN |
+### Ingress — Traefik Reverse Proxy (`compose/core`)
+
+All LAN HTTP/HTTPS traffic enters on ports 80/443 through Traefik v3. Traefik
+terminates TLS (self-signed wildcard `*.hal.local`) and routes by hostname to backend
+containers. Services opt in to routing by attaching to the `traefik` external Docker
+network and declaring `traefik.enable=true` labels.
+
+The `traefik` external Docker network is the shared routing fabric — all stacks that
+need external access declare it as external and attach their service containers to it.
+
+### Port Map
+
+| Service | Port | Access | Notes |
+|---------|------|--------|-------|
+| Traefik HTTP | 80 | LAN | Redirects → 443 |
+| Traefik HTTPS | 443 | LAN | TLS termination for `*.hal.local` |
+| Traefik Dashboard | 8080 | LAN | Basic-auth; `http://hal-10k.local:8080/dashboard/` |
+| Portainer | 9443 | LAN | Direct host bind |
+| Dockge | 5001 | LAN | Direct host bind |
+| Ollama | 11434 | Internal | No host bind; LiteLLM only |
+| LiteLLM | 4000 | Traefik | `https://litellm.hal.local` |
+| Open WebUI | 3000 | Traefik | `https://openwebui.hal.local` |
+| ChromaDB | 8000 | Internal | No host bind; pipeline services only |
+| n8n | 5678 | Traefik | `https://n8n.hal.local` |
+| Gitea | 3001 | Traefik | `https://gitea.hal.local` |
+| XRDP | 3389 | LAN | Direct host bind |
+
+See [docs/ports.md](../ports.md) for the full authoritative registry.

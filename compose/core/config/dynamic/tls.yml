@@ -1,0 +1,13 @@
+# Traefik v3 — dynamic TLS configuration
+# Reloaded automatically by the file provider (watch: true).
+
+tls:
+  certificates:
+    - certFile: /certs/hal-local.crt
+      keyFile:  /certs/hal-local.key
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/hal-local.crt
+        keyFile:  /certs/hal-local.key

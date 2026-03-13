@@ -37,11 +37,11 @@ Seed the repository structure and establish the secrets management baseline.
 
 Automate Compose stack generation from declarative service specifications.
 
-- [ ] Evaluate Spec-Kit vs Open-Spec ADD for stack generation
-- [ ] Author `specs/` directory with ADD specs for each service
-- [ ] `docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md`
-- [ ] Integrate spec generation into the WORKFLOW (generate → review → deploy)
-- [ ] Retrofit existing stacks with ADD specs (retroactive documentation)
+- [x] Evaluate Spec-Kit vs Open-Spec ADD for stack generation
+- [x] Author `specs/` directory with ADD specs for each service
+- [x] `docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md`
+- [x] Integrate spec generation into the WORKFLOW (generate → review → deploy)
+- [x] Retrofit existing stacks with ADD specs (retroactive documentation)
 
 ---
 
@@ -49,12 +49,14 @@ Automate Compose stack generation from declarative service specifications.
 
 Deploy the reverse proxy as the entry point for all services.
 
-- [ ] `compose/core/docker-compose.yml` — Traefik v3
-- [ ] `compose/core/.env.example`
-- [ ] `secrets/core.enc.yaml` — TLS / dashboard credentials
-- [ ] `docs/runbooks/core-traefik.md`
-- [ ] `docs/decisions/adr/ADR-0002-reverse-proxy-traefik.md`
-- [ ] Verify: all services accessible via Traefik labels
+- [x] `compose/core/docker-compose.yml` — Traefik v3 + nginx socket proxy (ADR-0005)
+- [x] `compose/core/.env.example`
+- [x] `secrets/core.enc.yaml` — TLS / dashboard credentials (SOPS + age)
+- [x] `docs/runbooks/core-traefik.md`
+- [x] `docs/decisions/adr/ADR-0004-reverse-proxy-traefik.md`
+- [x] `docs/decisions/adr/ADR-0005-docker-socket-proxy.md`
+- [x] `docs/ports.md` — authoritative port registry
+- [x] Verify: Traefik healthy, dashboard auth working, HTTP→HTTPS redirect confirmed
 
 ---
 

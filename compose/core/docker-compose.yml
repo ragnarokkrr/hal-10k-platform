@@ -1,0 +1,90 @@
+# compose/core/docker-compose.yml
+# Traefik v3 — core reverse proxy stack
+#
+# Prerequisites:
+#   1. traefik external network exists:  ./scripts/create-traefik-network.sh
+#   2. Secrets decrypted:               ./scripts/secrets-decrypt.sh core
+#   3. TLS files extracted:
+#        python3 -c "
+#          import yaml, base64, os
+#          d = yaml.safe_load(open('/srv/platform/secrets/core.yaml'))
+#          for f,k in [('hal-local.crt','TRAEFIK_TLS_CERT'),('hal-local.key','TRAEFIK_TLS_KEY')]:
+#            p = f'/srv/platform/secrets/{f}'
+#            open(p,'wb').write(base64.b64decode(d[k])); os.chmod(p,0o600)
+#        "
+#
+# Note: Docker socket access is proxied via docker-socket-proxy (see ADR-0005).
+
+services:
+
+  # ── Docker socket proxy ──────────────────────────────────────────────────────
+  # nginx-based proxy that rewrites Traefik's /v1.24/ API paths to /v1.45/,
+  # bridging the Docker CE 29+ minimum API version requirement (>= 1.40).
+  # See: docs/decisions/adr/ADR-0005-docker-socket-proxy.md
+  docker-socket-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    user: root    # required to read /var/run/docker.sock
+    volumes:
+      - ./config/docker-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy-socket
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2375/_ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # ── Traefik reverse proxy ────────────────────────────────────────────────────
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
+    env_file:
+      - /srv/platform/secrets/core.yaml
+
+    ports:
+      - "80:80"           # HTTP ingress
+      - "443:443"         # HTTPS ingress
+      - "8080:8080"       # Dashboard (basic-auth protected, LAN only)
+
+    volumes:
+      # Static config
+      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
+      # Dynamic config (file provider, hot-reloaded)
+      - ./config/dynamic:/etc/traefik/dynamic:ro
+      # TLS certificate and key (extracted from secrets/core.yaml at deploy time)
+      - /srv/platform/secrets/hal-local.crt:/certs/hal-local.crt:ro
+      - /srv/platform/secrets/hal-local.key:/certs/hal-local.key:ro
+      # No Docker socket mount — access is via docker-socket-proxy
+
+    networks:
+      - traefik
+      - proxy-socket
+
+    labels:
+      - "traefik.enable=true"
+      # Dashboard router — accessible at http://hal-10k.local:8080/dashboard/
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`hal-10k.local`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=dashboard"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth@file"
+
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  traefik:
+    external: true
+  proxy-socket:
+    # Internal-only network between Traefik and the Docker socket proxy.
+    # Not reachable from the host or the traefik network.
+    internal: true
