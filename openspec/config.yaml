@@ -1,0 +1,51 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+context: |
+  Single-node AI lab on BOSGAME M5 running Pop!_OS 24.04.
+  GPU: AMD RDNA 3.5 (40 CU), ROCm 7.2 stack; use amdgpu driver in compose.
+  Platform root: /srv/platform. Repo root: /srv/platform/repos/hal-10k-platform.
+  Platform services run in Docker Compose v2 (use `docker compose`, not `docker-compose`).
+  Pin all image tags; never use `latest` in production.
+  Experiments run in Distrobox, not on the host.
+  No secrets in git; use SOPS + age (secrets/*.enc.yaml).
+  Do not expose services to 0.0.0.0 unless explicitly documented.
+  Every service must define healthchecks, named volumes, explicit ports, and restart policy.
+  Every infrastructure change must update docs/services-catalog.md, docs/ports.md, and relevant runbooks.
+  Create a new ADR (docs/decisions/adr/ADR-NNNN-title.md) for meaningful architectural changes.
+  Shell scripts: bash, set -euo pipefail, shellcheck-clean, idempotent where possible.
+
+rules:
+  proposal: |
+    State target outcome, rationale, risks, validation, rollback, and resource impact.
+    Note if the change warrants a new ADR.
+  design: |
+    Include directory changes, compose impacts, networking, storage paths, and secret handling.
+    Specify image tags. Note GPU resource requirements if applicable.
+  tasks: |
+    Break work into small reversible steps. Prefer smallest safe change first.
+    Shell script tasks must be bash with set -euo pipefail.
+  specs: |
+    Use precise operational language. Avoid vague success criteria.
+  adr: |
+    Include: Status, Context, Decision, Consequences. Follow docs/decisions/adr/ADR-NNNN-title.md naming.
+  runbook: |
+    Step-numbered markdown. Each step must include a verification command. Note if one-time or repeatable.
