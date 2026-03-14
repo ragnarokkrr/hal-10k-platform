@@ -69,7 +69,7 @@ Deploy LLM serving and the web UI.
 - [ ] `secrets/ai.enc.yaml` — LiteLLM master key, API keys
 - [ ] `docs/runbooks/ai-stack.md`
 - [ ] `docs/runbooks/model-management.md` — pull, list, delete Ollama models
-- [ ] `docs/decisions/adr/ADR-0003-llm-serving-ollama-litellm.md`
+- [ ] `docs/decisions/adr/ADR-0006-llm-serving-ollama-litellm.md`
 - [ ] Initial model roster: Qwen2.5-Coder-32B, DeepSeek-Coder-33B, Llama-3.3-70B
 - [ ] `docs/runbooks/ai-client-setup.md` — configure Claude Code and Cline to use the initial model roster via LiteLLM proxy
 
