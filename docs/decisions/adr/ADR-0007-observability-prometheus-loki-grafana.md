@@ -98,7 +98,10 @@ reproducible across deploys. Manual imports are lost on volume teardown.
 - **Negative**: cAdvisor requires `privileged: true` and host bind mounts — accepted on
   a single-node lab.
 - **Negative**: ROCm GPU metrics require a separate `rocm-smi` exporter container;
-  GPU dashboard panels will show "No data" until the exporter is deployed (deferred).
+  Ollama and LiteLLM metric panels require their respective metrics endpoints to be
+  enabled and scraped. All three dashboards show "No data" until resolved. See
+  [ADR-0009](ADR-0009-observability-missing-metrics-sources.md) for root causes and
+  resolution plan.
 - **Negative**: cAdvisor per-container labelling fails with Docker 29+ containerd
   snapshotter. Host-level metrics are unaffected. See
   [ADR-0008](ADR-0008-cadvisor-containerd-snapshotter-limitation.md) for full analysis
