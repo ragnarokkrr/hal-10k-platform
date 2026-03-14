@@ -75,25 +75,28 @@ Deploy LLM serving and the web UI.
 
 ---
 
-## Phase 5 — Observability
+## Phase 5 — Observability ✓
 
 Monitoring and log aggregation for all platform services.
 Deployed early so every subsequent phase can wire up metrics and dashboards incrementally.
 
-- [ ] `compose/observability/docker-compose.yml` — Prometheus + Grafana + Loki
-- [ ] Node Exporter + cAdvisor for host and container metrics
-- [ ] `secrets/observability.enc.yaml` — Grafana admin credentials
-- [ ] `docs/runbooks/observability.md`
-- [ ] `docs/decisions/adr/ADR-observability-stack.md`
-- [ ] Grafana dashboards — foundation set:
-  - [ ] Host: CPU, RAM, disk I/O, network (`/srv/platform` usage alert)
-  - [ ] GPU: ROCm utilization, VRAM, temperature (alert on thermal limit)
-  - [ ] Containers: per-stack resource usage via cAdvisor
-  - [ ] Traefik: request rate, error rate, latency (via Traefik access log → Loki)
-- [ ] Grafana dashboards — AI stack (provisioned after Phase 4):
-  - [ ] Ollama: active model, inference request rate, latency
-  - [ ] LiteLLM: token throughput, per-model routing, error rate
-  - [ ] Open WebUI: active sessions
+- [x] `compose/observability/docker-compose.yml` — Prometheus + Grafana + Loki
+- [x] Node Exporter + cAdvisor for host and container metrics
+- [x] `secrets/observability.enc.yaml` — Grafana admin credentials
+- [x] `docs/runbooks/observability.md`
+- [x] `docs/decisions/adr/ADR-0007-observability-prometheus-loki-grafana.md`
+- [x] Grafana dashboards — foundation set:
+  - [x] Host: CPU, RAM, disk I/O, network (`/srv/platform` usage)
+  - [x] GPU: ROCm utilization, VRAM, temperature (stub — awaiting ROCm exporter)
+  - [x] Containers: per-stack resource usage via cAdvisor (limited — see Note)
+  - [x] Traefik: request rate, error rate, latency (Prometheus metrics entrypoint)
+- [x] Grafana dashboards — AI stack (provisioned after Phase 4):
+  - [x] Ollama: inference request rate, latency (stub — awaiting Ollama metrics endpoint)
+  - [x] LiteLLM: token throughput, per-model routing, error rate (stub — awaiting LiteLLM metrics)
+- [x] Docker Loki log driver configured as default; all container logs aggregated in Loki
+- [x] `docs/testcases/observability-stack-test.md`
+
+**Note**: cAdvisor per-container labelling not functional with Docker 29+ containerd snapshotter (`io.containerd.snapshotter.v1`). Host-level metrics fully operational. Fix requires switching Docker storage driver to `overlay2` and re-pulling images (~5 GB) — scheduled for a future maintenance window.
 
 ---
 

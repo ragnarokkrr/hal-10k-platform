@@ -1,0 +1,204 @@
+# compose/observability/docker-compose.yml
+# Observability Stack — Prometheus + Loki + Grafana + Node Exporter + cAdvisor
+#
+# Prerequisites:
+#   1. Traefik core stack running:  docker compose -f compose/core/docker-compose.yml up -d
+#   2. Secrets decrypted:           ./scripts/secrets-decrypt.sh observability
+#   3. Image tags set:              copy .env.example → .env, confirm tags
+#   4. Loki log driver installed:   docker plugin ls | grep loki
+#
+# Bring up:  docker compose -f compose/observability/docker-compose.yml up -d
+# Tear down: docker compose -f compose/observability/docker-compose.yml down
+# Pull logs: docker compose -f compose/observability/docker-compose.yml logs -f
+#
+# Network topology:
+#   traefik              (external) ← Traefik routes Grafana at grafana.hal.local
+#   observability_internal          ← Prometheus scrapes all exporters; Loki ingests logs
+
+services:
+
+  # ── Prometheus — metrics collection & alerting ────────────────────────────
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.2.1}
+    container_name: prometheus
+    restart: unless-stopped
+
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    # Prometheus is reachable only on observability_internal; NOT exposed to host.
+    networks:
+      - observability_internal
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Loki — log aggregation backend ───────────────────────────────────────
+  loki:
+    image: ${LOKI_IMAGE:-grafana/loki:3.4.2}
+    container_name: loki
+    restart: unless-stopped
+
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+
+    # Loki is reachable only on observability_internal; NOT exposed to host.
+    # The Loki log driver connects to localhost:3100 (host network), not this container
+    # directly — the driver bypasses Docker networking to push logs.
+    networks:
+      - observability_internal
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── Grafana — dashboards & visualisation ─────────────────────────────────
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.6.0}
+    container_name: grafana
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      # Password sourced from secrets/observability.yaml (SOPS-managed)
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/host-overview.json
+
+    env_file:
+      # Decrypted at runtime by: ./scripts/secrets-decrypt.sh observability
+      # Contains: GF_SECURITY_ADMIN_PASSWORD
+      - /srv/platform/secrets/observability.yaml
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    # Grafana joins observability_internal (datasources) and traefik (ingress).
+    # Port 3000 is NOT mapped to the host.
+    networks:
+      - observability_internal
+      - traefik
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.hal.local`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  # ── Node Exporter — host-level metrics ───────────────────────────────────
+  node-exporter:
+    image: ${NODE_EXPORTER_IMAGE:-prom/node-exporter:v1.9.1}
+    container_name: node-exporter
+    restart: unless-stopped
+    pid: host
+
+    command:
+      - "--path.rootfs=/host"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+
+    volumes:
+      - /:/host:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+
+    networks:
+      - observability_internal
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── cAdvisor — per-container resource metrics ────────────────────────────
+  cadvisor:
+    image: ${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.52.0}
+    container_name: cadvisor
+    restart: unless-stopped
+
+    # cAdvisor requires privileged host mounts for accurate container metrics.
+    privileged: true
+
+    # Docker uses the containerd snapshotter (io.containerd.snapshotter.v1).
+    # cAdvisor must connect to containerd directly (not Docker API) to discover
+    # containers because the classic overlayfs layerdb/mounts path doesn't exist.
+    # Docker stores containers in the "moby" containerd namespace.
+    command:
+      - "--containerd=/run/containerd/containerd.sock"
+      - "--containerd-namespace=moby"
+      - "--docker_root=/rootfs/srv/platform/docker"
+      - "--housekeeping_interval=15s"
+      - "--disable_metrics=disk,network,tcp,udp,percpu,sched,process"
+
+    devices:
+      - /dev/kmsg
+
+    volumes:
+      - /:/rootfs:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /sys:/sys:ro
+      - /srv/platform/docker:/var/lib/docker:ro
+
+    networks:
+      - observability_internal
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  observability_internal:
+    # Private bridge: Prometheus scrapes exporters; Grafana queries Prometheus + Loki.
+    # Internal flag not set — containers need outbound access for plugin/datasource calls.
+    # Explicit name prevents Docker Compose from adding a project-name prefix,
+    # ensuring the core stack can reference it as external: true with the same name.
+    name: observability_internal
+  traefik:
+    external: true
+
+volumes:
+  prometheus_data:
+    # Prometheus TSDB — 30-day retention. Stored under /srv/platform/docker/volumes/.
+  grafana_data:
+    # Grafana state: user accounts, dashboard edits, alert rules.
+  loki_data:
+    # Loki chunks and index — 30-day retention.

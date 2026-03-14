@@ -30,6 +30,24 @@ Update this file when adding, removing, or changing a service.
 
 ---
 
+## Observability Stack (`compose/observability/`)
+
+| Service | Image | Internal Port | Network(s) | Volume(s) | Purpose |
+|---------|-------|---------------|------------|-----------|---------|
+| `prometheus` | `prom/prometheus:v3.2.1` | 9090 | `observability_internal` | `prometheus_data` (30d retention) | Metrics collection & alerting |
+| `loki` | `grafana/loki:3.4.2` | 3100 | `observability_internal` | `loki_data` (30d retention) | Log aggregation backend |
+| `grafana` | `grafana/grafana:11.6.0` | 3000 | `observability_internal`, `traefik` | `grafana_data` | Dashboards & visualisation |
+| `node-exporter` | `prom/node-exporter:v1.9.1` | 9100 | `observability_internal` | `/proc`, `/sys`, `/` (ro bind) | Host-level metrics (CPU, RAM, disk, network) |
+| `cadvisor` | `gcr.io/cadvisor/cadvisor:v0.52.0` | 8080 | `observability_internal` | `/`, `/sys`, `/var/lib/docker` (ro) | Per-container resource metrics |
+
+**Traefik hostname**: Grafana → `https://grafana.hal.local`
+
+**Secrets**: `secrets/observability.enc.yaml` (SOPS) — decrypted at runtime to `/srv/platform/secrets/observability.yaml`
+
+**Note**: cAdvisor per-container labelling is limited with Docker 29+ containerd snapshotter. Host metrics from node-exporter are fully operational. See [runbooks/observability.md](runbooks/observability.md#5-known-limitations).
+
+---
+
 ## Bootstrap Services (not Compose-managed)
 
 | Service | Access | Purpose |
@@ -44,10 +62,9 @@ Update this file when adding, removing, or changing a service.
 
 | Stack | Service | Phase |
 |-------|---------|-------|
-| `compose/observability/` | Prometheus + Grafana + Loki | Phase 5 |
-| `compose/data/` | ChromaDB | Phase 6 |
-| `compose/workflows/` | n8n | Phase 7 |
-| `compose/gitea/` | Gitea + PostgreSQL | Phase 8 |
+| `compose/data/` | ChromaDB | Phase 7 |
+| `compose/workflows/` | n8n | Phase 8 |
+| `compose/gitea/` | Gitea + PostgreSQL | Phase 9 |
 
 ---
 
@@ -58,6 +75,7 @@ Update this file when adding, removing, or changing a service.
 | `traefik` | External bridge | All Traefik-routed services |
 | `proxy-socket` | Internal bridge | Traefik ↔ docker-socket-proxy |
 | `ai_internal` | Internal bridge | Ollama ↔ LiteLLM ↔ Open WebUI |
+| `observability_internal` | Bridge | Prometheus ↔ Grafana ↔ Loki ↔ exporters; Traefik scrape target |
 
 ---
 
@@ -67,3 +85,6 @@ Update this file when adding, removing, or changing a service.
 |--------|-------|---------|
 | `/srv/platform/models/` (bind) | AI | Ollama model weights |
 | `open_webui_data` (named) | AI | Open WebUI user data, chat history, RAG docs |
+| `prometheus_data` (named) | Observability | Prometheus TSDB — 30-day retention |
+| `grafana_data` (named) | Observability | Grafana user accounts, dashboard edits, alert rules |
+| `loki_data` (named) | Observability | Loki log chunks and index — 30-day retention |

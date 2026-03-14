@@ -1,0 +1,91 @@
+{
+  "uid": "hal-gpu-rocm",
+  "title": "GPU / ROCm",
+  "tags": ["hal-10k", "gpu", "rocm"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "GPU Utilisation",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "rocm_gpu_utilization_percent", "legendFormat": "GPU %" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":60},{"color":"red","value":85}] } } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "VRAM Used",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "rocm_memory_used_bytes", "legendFormat": "VRAM Used" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 3, "type": "stat", "title": "GPU Temperature",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "rocm_temperature_celsius", "legendFormat": "Temp °C" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "celsius", "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":75},{"color":"red","value":90}] } } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "GPU Power Draw",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "rocm_power_watts", "legendFormat": "Power W" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "watt" } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "GPU Utilisation Over Time",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "rocm_gpu_utilization_percent", "legendFormat": "GPU %" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "VRAM Usage Over Time",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rocm_memory_used_bytes", "legendFormat": "Used" },
+        { "expr": "rocm_memory_total_bytes", "legendFormat": "Total" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Temperature & Power",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rocm_temperature_celsius", "legendFormat": "Temp °C" },
+        { "expr": "rocm_power_watts", "legendFormat": "Power W" }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Temp °C" }, "properties": [{ "id": "unit", "value": "celsius" }] },
+          { "matcher": { "id": "byName", "options": "Power W" }, "properties": [{ "id": "unit", "value": "watt" }, { "id": "custom.axisPlacement", "value": "right" }] }
+        ]
+      }
+    }
+  ],
+  "annotations": {
+    "list": [{
+      "name": "No exporter",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "expr": "absent(rocm_gpu_utilization_percent)",
+      "enable": true,
+      "hide": false,
+      "iconColor": "orange",
+      "titleFormat": "ROCm exporter not running"
+    }]
+  },
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus", "current": { "text": "Prometheus", "value": "Prometheus" } }
+    ]
+  }
+}

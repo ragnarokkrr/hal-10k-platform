@@ -1,0 +1,65 @@
+{
+  "uid": "hal-litellm",
+  "title": "LiteLLM Proxy",
+  "tags": ["hal-10k", "litellm", "ai"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Total Requests (5m)",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(increase(litellm_request_total[5m]))", "legendFormat": "requests" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Total Tokens (5m)",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(increase(litellm_tokens_total[5m]))", "legendFormat": "tokens" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Error Rate",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(rate(litellm_request_total{status=\"error\"}[5m])) / sum(rate(litellm_request_total[5m])) * 100", "legendFormat": "error %" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":1},{"color":"red","value":5}] } } }
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Request Rate by Model",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum by(model) (rate(litellm_request_total[5m]))", "legendFormat": "{{model}}" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Token Throughput by Model",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum by(model) (rate(litellm_prompt_tokens_total[5m]))", "legendFormat": "{{model}} prompt" },
+        { "expr": "sum by(model) (rate(litellm_completion_tokens_total[5m]))", "legendFormat": "{{model}} completion" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 6, "type": "logs", "title": "LiteLLM Logs",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{ "expr": "{container_name=\"litellm\"}", "legendFormat": "" }],
+      "options": { "dedupStrategy": "none", "showLabels": false, "wrapLogMessage": true, "sortOrder": "Descending" }
+    }
+  ],
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus", "current": { "text": "Prometheus", "value": "Prometheus" } },
+      { "name": "DS_LOKI", "type": "datasource", "pluginId": "loki", "current": { "text": "Loki", "value": "Loki" } }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "uid": "hal-containers",
+  "title": "Container Resources",
+  "tags": ["hal-10k", "containers", "cadvisor"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "CPU Usage by Container",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "sum by(container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=\"\"}[5m])) * 100",
+        "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Memory Usage by Container",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "container_memory_usage_bytes{container_label_com_docker_compose_service!=\"\"}",
+        "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Network Receive by Container",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "rate(container_network_receive_bytes_total{container_label_com_docker_compose_service!=\"\"}[5m])",
+        "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "Bps" } }
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Network Transmit by Container",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "rate(container_network_transmit_bytes_total{container_label_com_docker_compose_service!=\"\"}[5m])",
+        "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "Bps" } }
+    },
+    {
+      "id": 5, "type": "table", "title": "Container Memory Summary",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "container_memory_usage_bytes{container_label_com_docker_compose_service!=\"\"} / 1024 / 1024",
+        "legendFormat": "{{container_label_com_docker_compose_service}}",
+        "instant": true
+      }],
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
+      "fieldConfig": { "defaults": { "unit": "megbytes" } }
+    }
+  ]
+}

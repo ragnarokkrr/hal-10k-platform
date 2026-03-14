@@ -65,6 +65,7 @@ services:
     networks:
       - traefik
       - proxy-socket
+      - observability_internal
 
     labels:
       - "traefik.enable=true"
@@ -88,3 +89,7 @@ networks:
     # Internal-only network between Traefik and the Docker socket proxy.
     # Not reachable from the host or the traefik network.
     internal: true
+  observability_internal:
+    # Shared with the observability stack so Prometheus can scrape Traefik :8082.
+    # Must be created before this stack starts (created by the observability stack).
+    external: true

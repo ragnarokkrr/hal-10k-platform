@@ -15,6 +15,8 @@ entryPoints:
     address: ":443"
   dashboard:
     address: ":8080"
+  metrics:
+    address: ":8082"
 
 # Docker provider
 # Endpoint points to docker-socket-proxy (see ADR-0005), not the raw socket.
@@ -43,3 +45,13 @@ accessLog: {}
 # Bound to the dashboard entrypoint to avoid conflicting with the internal :8080 default.
 ping:
   entryPoint: "dashboard"
+
+# Prometheus metrics
+# Exposed on the metrics entrypoint (:8082), scraped by Prometheus via observability_internal network.
+# Port 8082 is NOT mapped to the host.
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
