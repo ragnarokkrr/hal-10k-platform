@@ -29,6 +29,8 @@ This repository is the versioned source of truth for everything deployed on HAL-
 
 ## Hardware
 
+<img src="docs/assets/BOSGAME_M5_AI.png" alt="BOSGAME M5 AI Mini" width="600"/>
+
 | Component | Spec |
 |-----------|------|
 | Platform | BOSGAME M5 AI Mini |
