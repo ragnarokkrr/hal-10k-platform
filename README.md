@@ -128,6 +128,26 @@ cd compose/core && docker compose up -d
 See [WORKFLOW.md](WORKFLOW.md) for the full development and deployment workflow.
 See [ROADMAP.md](ROADMAP.md) for planned phases.
 
+## Spec-Driven Development
+
+Infrastructure changes on HAL-10k follow a spec-driven workflow powered by
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)** (by Fission AI).
+
+Every meaningful change goes through a `propose → apply → archive` cycle that produces
+reviewable, diffable, committable artifacts _before_ any repo files are modified:
+
+```
+/opsx:propose   → define the change (proposal, design, tasks)
+review spec     → sanity-check before Claude touches anything
+/opsx:apply     → implement repo changes
+manual validate → run bootstrap / compose checks
+/opsx:archive   → close the change
+```
+
+Change artifacts live under `openspec/changes/` and are committed alongside code.
+See [ADR-0003](docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md) for the
+full rationale and scope rules.
+
 ## Reference Notes (HAL-10k Personal Assistant - Obsidian Vault)
 
 All `homelab`-tagged vault notes used to build this project:
