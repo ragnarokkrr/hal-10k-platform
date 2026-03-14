@@ -207,7 +207,7 @@ hal-gpu-rocm       GPU ROCm
 
 - CPU Usage stat panel: shows percentage (e.g. 5-30%)
 - RAM Used stat panel: shows percentage
-- Disk Used (/srv/platform) stat panel: shows percentage
+- Disk Used (/srv) stat panel: shows percentage
 - System Uptime stat panel: shows duration (e.g. "2h 30m")
 - Time-series panels (CPU over time, Memory, Network I/O, Disk I/O): display data lines
 
@@ -220,8 +220,8 @@ hal-gpu-rocm       GPU ROCm
 ### Steps
 
 ```bash
-# Generate some log output
-docker logs traefik 2>&1 | tail -1
+# Generate some log output (Traefik container is named core-traefik-1)
+docker logs core-traefik-1 2>&1 | tail -1
 
 # Query Loki for traefik logs
 curl -s "http://localhost:3100/loki/api/v1/query_range?query=%7Bcompose_service%3D%22traefik%22%7D&start=$(python3 -c "import time; print(int((time.time()-300)*1e9))")&end=$(python3 -c "import time; print(int(time.time()*1e9))")" \
@@ -245,7 +245,44 @@ else:
 
 ---
 
-## TC-10 — Prometheus data retention (smoke test)
+## TC-10 — Grafana Explore shows Loki logs
+
+**Covers**: Loki datasource queryable from Grafana UI; log streams browsable
+
+### Steps
+
+1. Open `https://grafana.hal.local` in a browser
+2. Left sidebar → **Explore** (compass icon)
+3. Datasource dropdown (top-left) → select **Loki**
+4. Switch query builder to **Code** mode
+5. Enter the query and click **Run query**:
+   ```logql
+   {compose_service="traefik"}
+   ```
+6. Set time range to **Last 15 minutes**
+
+### Expected Results
+
+- Log lines from Traefik appear in the results panel
+- Each entry shows timestamp and access log content
+- No "Loki datasource not found" or "No data" errors
+
+### Other useful queries
+
+```logql
+# All containers from a compose project
+{compose_project="core"}
+
+# Search for errors across all logs
+{compose_project=~".+"} |= "error"
+
+# By container name
+{container_name="core-traefik-1"}
+```
+
+---
+
+## TC-11 — Prometheus data retention (smoke test)
 
 **Covers**: Prometheus TSDB writing and retaining data
 
@@ -253,7 +290,7 @@ else:
 
 ```bash
 # Check TSDB status
-docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/tsdb/status' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/status/tsdb' \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -269,7 +306,7 @@ print('Retention (config):', '30d')
 
 ---
 
-## TC-11 — Stack survives docker daemon restart
+## TC-12 — Stack survives docker daemon restart
 
 **Covers**: `restart: unless-stopped` policy; all services recover after host reboot
 
