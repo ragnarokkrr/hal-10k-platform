@@ -57,9 +57,12 @@ services:
       - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
       - loki_data:/loki
 
-    # Loki is reachable only on observability_internal; NOT exposed to host.
-    # The Loki log driver connects to localhost:3100 (host network), not this container
-    # directly — the driver bypasses Docker networking to push logs.
+    # The Docker Loki log driver is a host-side plugin; it pushes to localhost:3100
+    # on the host network. Loki must be bound to 127.0.0.1:3100 so the driver can
+    # reach it. The port is loopback-only — not exposed on LAN.
+    ports:
+      - "127.0.0.1:3100:3100"
+
     networks:
       - observability_internal
 

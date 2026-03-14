@@ -179,12 +179,20 @@ docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all
 ### Verify logs reach Loki
 
 ```bash
-# Query last 5 minutes of Loki for a container
-docker exec loki wget -qO- \
-  "http://localhost:3100/loki/api/v1/query_range?query=%7Bcontainer_name%3D%22traefik%22%7D&start=$(date -d '5 minutes ago' +%s)000000000&end=$(date +%s)000000000" \
+# Query last 5 minutes of Loki for a container (Loki bound to 127.0.0.1:3100)
+curl -s "http://localhost:3100/loki/api/v1/query_range?query=%7Bcompose_service%3D%22traefik%22%7D&start=$(date -d '5 minutes ago' +%s)000000000&end=$(date +%s)000000000" \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['data']['result']), 'streams')"
 # Expected: 1 streams (or more)
 ```
+
+**Label reference**: The Loki log driver attaches these labels to every log line:
+
+| Label | Example value | Notes |
+|-------|---------------|-------|
+| `compose_service` | `traefik` | Always the Compose service name; use this for reliable queries |
+| `container_name` | `core-traefik-1` | Actual container name; includes project prefix if no `container_name:` set |
+| `compose_project` | `core` | Docker Compose project name |
+| `host` | `hal-10k` | Hostname |
 
 ---
 

@@ -78,8 +78,10 @@ endpoint path and metric names differ from the dashboard assumptions:
   label structure and counter names require verification against the running version
 
 **Additional note — logs panel**: The Loki panel (`{container_name="ollama"}`) should
-work once log ingestion is confirmed. The Docker Loki log driver attaches a
-`container_name` label. This panel is not blocked by the missing metrics issue.
+work. The `ollama` container has `container_name: ollama` set in the Compose file so the
+label matches exactly. The preferred query label is `compose_service` (always equals the
+Compose service name regardless of `container_name`), but `container_name` works here.
+This panel is not blocked by the missing metrics issue.
 
 ---
 
@@ -115,8 +117,8 @@ is not configured in the current deployment. Two issues:
    must be attached to `observability_internal`, or a separate scrape target must be
    exposed via the `traefik` network.
 
-**Additional note — logs panel**: Same as Ollama — `{container_name="litellm"}` should
-work via the Loki driver and is not blocked by the metrics issue.
+**Additional note — logs panel**: Same as Ollama — `litellm` has `container_name: litellm`
+set, so `{container_name="litellm"}` matches. Not blocked by the metrics issue.
 
 ---
 

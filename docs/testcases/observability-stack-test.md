@@ -224,8 +224,7 @@ hal-gpu-rocm       GPU ROCm
 docker logs traefik 2>&1 | tail -1
 
 # Query Loki for traefik logs
-docker exec loki wget -qO- \
-  "http://localhost:3100/loki/api/v1/query_range?query=%7Bcontainer_name%3D%22traefik%22%7D&start=$(python3 -c "import time; print(int((time.time()-300)*1e9))")&end=$(python3 -c "import time; print(int(time.time()*1e9))")" \
+curl -s "http://localhost:3100/loki/api/v1/query_range?query=%7Bcompose_service%3D%22traefik%22%7D&start=$(python3 -c "import time; print(int((time.time()-300)*1e9))")&end=$(python3 -c "import time; print(int(time.time()*1e9))")" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
