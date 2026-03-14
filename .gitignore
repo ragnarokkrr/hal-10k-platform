@@ -32,3 +32,4 @@ Thumbs.db
 
 # Pipeline work directories (research artifacts)
 _work/
+.claude/
