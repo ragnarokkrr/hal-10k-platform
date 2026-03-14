@@ -24,10 +24,10 @@
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":75},{"color":"red","value":90}] } } }
     },
     {
-      "id": 3, "type": "stat", "title": "Disk Used (/srv/platform)",
+      "id": 3, "type": "stat", "title": "Disk Used (/srv)",
       "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/srv/platform\"} / node_filesystem_size_bytes{mountpoint=\"/srv/platform\"})) * 100", "legendFormat": "Disk %" }],
+      "targets": [{ "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/srv\"} / node_filesystem_size_bytes{mountpoint=\"/srv\"})) * 100", "legendFormat": "Disk %" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":85}] } } }
     },

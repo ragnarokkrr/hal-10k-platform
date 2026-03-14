@@ -83,7 +83,7 @@ docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_
   | python3 -c "import json,sys; d=json.load(sys.stdin); v=d['data']['result'][0]['value'][1]; print('RAM bytes:', v)"
 
 # Disk metric
-docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_filesystem_size_bytes%7Bmountpoint%3D%22%2Fsrv%2Fplatform%22%7D' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_filesystem_size_bytes%7Bmountpoint%3D%22%2Fsrv%22%7D' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('Disk series:', len(d['data']['result']))"
 ```
 
