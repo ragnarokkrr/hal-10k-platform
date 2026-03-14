@@ -99,6 +99,10 @@ reproducible across deploys. Manual imports are lost on volume teardown.
   a single-node lab.
 - **Negative**: ROCm GPU metrics require a separate `rocm-smi` exporter container;
   GPU dashboard panels will show "No data" until the exporter is deployed (deferred).
+- **Negative**: cAdvisor per-container labelling fails with Docker 29+ containerd
+  snapshotter. Host-level metrics are unaffected. See
+  [ADR-0008](ADR-0008-cadvisor-containerd-snapshotter-limitation.md) for full analysis
+  and resolution plan.
 
 ---
 
