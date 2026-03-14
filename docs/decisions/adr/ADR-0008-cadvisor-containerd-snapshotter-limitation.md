@@ -122,9 +122,22 @@ configuration level.
 
 - **Positive**: No service disruption during Phase 5 deployment.
 - **Positive**: Issue is fully documented, reproducible, and reversible.
-- **Negative**: Container Resources Grafana dashboard shows no per-container data until
-  the fix is applied.
 - **Negative**: Per-container CPU/memory alerting cannot be configured until fixed.
+- **Negative**: The following Grafana dashboards are partially or fully affected:
+
+  | Dashboard | UID | Impact |
+  |-----------|-----|--------|
+  | Container Resources | `hal-container` | **All panels show no data.** Every panel queries `container_cpu_usage_seconds_total`, `container_memory_working_set_bytes`, or `container_network_*` filtered by `container_label_com_docker_compose_service` — a label that is never attached because container discovery fails. |
+  | Ollama Inference | `hal-ollama` | **Logs panel shows no data.** The bottom panel queries `{container_name="ollama"}` from Loki. With the containerd snapshotter, the Loki log driver still receives logs (it uses the Docker API, not cAdvisor), so this should actually work once confirmed. Metric panels (requests/s, latency, tokens/s) are unaffected by this issue — they are blocked on Ollama not yet exposing a Prometheus endpoint. |
+  | LiteLLM Proxy | `hal-litellm` | Same as Ollama: logs panel queries `{container_name="litellm"}`. Metric panels blocked on LiteLLM Prometheus export, not on cAdvisor. |
+
+  Dashboards **not affected** by this issue:
+
+  | Dashboard | UID | Status |
+  |-----------|-----|--------|
+  | Host Overview | `hal-host-overview` | Fully operational — uses Node Exporter metrics only. |
+  | Traefik | `hal-traefik` | Fully operational — uses Traefik Prometheus metrics endpoint. |
+  | GPU ROCm | `hal-gpu-rocm` | Blocked on ROCm exporter deployment, not on cAdvisor. |
 
 ---
 
