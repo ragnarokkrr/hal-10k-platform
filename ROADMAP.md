@@ -97,48 +97,7 @@ Deployed early so every subsequent phase can wire up metrics and dashboards incr
 
 ---
 
-## Phase 6 — Data & Vector Store
-
-Persistent storage layer for embeddings and RAG pipelines.
-
-- [ ] `compose/data/docker-compose.yml` — ChromaDB
-- [ ] `secrets/data.enc.yaml`
-- [ ] `docs/runbooks/data-chromadb.md`
-- [ ] `docs/decisions/adr/ADR-vector-store-chromadb.md`
-- [ ] Verify: Open WebUI RAG pipeline connected to ChromaDB
-- [ ] Grafana: add ChromaDB collection count and query latency dashboard
-
----
-
-## Phase 7 — Workflow Automation (n8n)
-
-Orchestration layer for AI pipelines and integrations.
-
-- [ ] `compose/workflows/docker-compose.yml` — n8n
-- [ ] `secrets/workflows.enc.yaml`
-- [ ] `docs/runbooks/workflows-n8n.md`
-- [ ] Initial workflow: HAL-10k PA → Ollama → ChromaDB
-- [ ] Grafana: add n8n workflow execution count and error rate dashboard
-
----
-
-## Phase 8 — Implementing Gitea (Self-Hosted Git)
-
-Replace GitHub dependency with an on-prem git server for full self-sufficiency.
-
-- [ ] `compose/gitea/docker-compose.yml` — Gitea + PostgreSQL
-- [ ] `secrets/gitea.enc.yaml`
-- [ ] `docs/runbooks/gitea-setup.md`
-- [ ] `docs/runbooks/migrate-repos-to-gitea.md` — mirror `hal-10k-platform` from GitHub
-- [ ] `docs/decisions/adr/ADR-self-hosted-git-gitea.md`
-- [ ] Configure Gitea Actions runner (CI for this repo)
-- [ ] Update `WORKFLOW.md` to reflect Gitea as primary remote
-- [ ] Grafana: add Gitea repository activity and PostgreSQL metrics dashboard
-- [ ] Loki: wire Gitea + Actions runner logs into log aggregation
-
----
-
-## Phase 9 — Experimentation Layer (Distrobox)
+## Phase 6 — Experimentation Layer (Distrobox)
 
 Establish the Experimentation Layer as a formal, documented tier of the HAL-10k lab
 for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podman) at
@@ -154,6 +113,47 @@ for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podm
 - [ ] Evaluate LM Studio API vs Ollama for experiment-layer model serving (**future**)
 - [ ] `docs/runbooks/experimentation-layer-setup.md` — full implementation steps (**future**)
 - [ ] Grafana: GPU utilization dashboard scoped to experiment workloads (**future**)
+
+---
+
+## Phase 7 — Data & Vector Store
+
+Persistent storage layer for embeddings and RAG pipelines.
+
+- [ ] `compose/data/docker-compose.yml` — ChromaDB
+- [ ] `secrets/data.enc.yaml`
+- [ ] `docs/runbooks/data-chromadb.md`
+- [ ] `docs/decisions/adr/ADR-vector-store-chromadb.md`
+- [ ] Verify: Open WebUI RAG pipeline connected to ChromaDB
+- [ ] Grafana: add ChromaDB collection count and query latency dashboard
+
+---
+
+## Phase 8 — Workflow Automation (n8n)
+
+Orchestration layer for AI pipelines and integrations.
+
+- [ ] `compose/workflows/docker-compose.yml` — n8n
+- [ ] `secrets/workflows.enc.yaml`
+- [ ] `docs/runbooks/workflows-n8n.md`
+- [ ] Initial workflow: HAL-10k PA → Ollama → ChromaDB
+- [ ] Grafana: add n8n workflow execution count and error rate dashboard
+
+---
+
+## Phase 9 — Implementing Gitea (Self-Hosted Git)
+
+Replace GitHub dependency with an on-prem git server for full self-sufficiency.
+
+- [ ] `compose/gitea/docker-compose.yml` — Gitea + PostgreSQL
+- [ ] `secrets/gitea.enc.yaml`
+- [ ] `docs/runbooks/gitea-setup.md`
+- [ ] `docs/runbooks/migrate-repos-to-gitea.md` — mirror `hal-10k-platform` from GitHub
+- [ ] `docs/decisions/adr/ADR-self-hosted-git-gitea.md`
+- [ ] Configure Gitea Actions runner (CI for this repo)
+- [ ] Update `WORKFLOW.md` to reflect Gitea as primary remote
+- [ ] Grafana: add Gitea repository activity and PostgreSQL metrics dashboard
+- [ ] Loki: wire Gitea + Actions runner logs into log aggregation
 
 ---
 
