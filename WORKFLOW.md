@@ -169,13 +169,19 @@ Decrypted files live **only** in `/srv/platform/secrets/` which is excluded from
 
 ---
 
-## Spec-Kit / Open-Spec ADD Integration (Planned)
+## OpenSpec Change Workflow
 
-Future automation of Docker Compose stack generation will be driven by **Spec-Kit** or
-**Open-Spec ADD** specifications. When that pipeline is in place:
+Infrastructure changes follow a spec-driven `propose → apply → archive` cycle powered by
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)**. Change artifacts live under
+`openspec/changes/` and are committed alongside code.
 
-1. Author a service spec in `specs/<stack>.add.yaml`
-2. Run `spec-kit generate compose specs/<stack>.add.yaml` → outputs `compose/<stack>/`
-3. Review generated output, adjust, commit
+```
+/opsx:propose   → define the change (proposal, design, tasks)
+review spec     → sanity-check before any repo files are modified
+/opsx:apply     → implement repo changes
+manual validate → run bootstrap / compose checks
+/opsx:archive   → close the change
+```
 
-See ROADMAP.md Phase 5 for details.
+See [ADR-0003](docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md) and
+the [README](README.md#spec-driven-development) for full details.

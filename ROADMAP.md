@@ -64,14 +64,14 @@ Deploy the reverse proxy as the entry point for all services.
 
 Deploy LLM serving and the web UI.
 
-- [ ] `compose/ai/docker-compose.yml` — Ollama + LiteLLM + Open WebUI
-- [ ] GPU device reservation (`driver: amdgpu`, ROCm environment variables)
-- [ ] `secrets/ai.enc.yaml` — LiteLLM master key, API keys
-- [ ] `docs/runbooks/ai-stack.md`
-- [ ] `docs/runbooks/model-management.md` — pull, list, delete Ollama models
-- [ ] `docs/decisions/adr/ADR-0006-llm-serving-ollama-litellm.md`
-- [ ] Initial model roster: Qwen2.5-Coder-32B, DeepSeek-Coder-33B, Llama-3.3-70B
-- [ ] `docs/runbooks/ai-client-setup.md` — configure Claude Code and Cline to use the initial model roster via LiteLLM proxy
+- [x] `compose/ai/docker-compose.yml` — Ollama + LiteLLM + Open WebUI
+- [x] GPU device reservation (`driver: amdgpu`, ROCm environment variables)
+- [x] `secrets/ai.enc.yaml` — LiteLLM master key, API keys
+- [x] `docs/runbooks/ai-stack.md`
+- [x] `docs/runbooks/model-management.md` — pull, list, delete Ollama models
+- [x] `docs/decisions/adr/ADR-0006-llm-serving-ollama-litellm.md`
+- [x] Initial model roster: Qwen2.5-Coder-32B, DeepSeek-R1-32B, Llama-3.3-70B
+- [x] `docs/runbooks/ai-client-setup.md` — configure Claude Code and Cline to use the initial model roster via LiteLLM proxy
 
 ---
 

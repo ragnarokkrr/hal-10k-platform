@@ -1,0 +1,153 @@
+# compose/ai/docker-compose.yml
+# AI Inference Stack — Ollama + LiteLLM + Open WebUI
+#
+# Prerequisites:
+#   1. Traefik core stack running:  docker compose -f compose/core/docker-compose.yml up -d
+#   2. Secrets decrypted:           ./scripts/secrets-decrypt.sh ai
+#   3. Image tags set:              copy .env.example → .env, confirm tags
+#
+# Bring up:  docker compose -f compose/ai/docker-compose.yml up -d
+# Tear down: docker compose -f compose/ai/docker-compose.yml down
+# Pull logs: docker compose -f compose/ai/docker-compose.yml logs -f
+#
+# Network topology:
+#   traefik (external) ← Traefik routes to litellm + open-webui
+#   ai_internal        ← ollama ↔ litellm ↔ open-webui (not Traefik-visible)
+
+services:
+
+  # ── Ollama — GPU-accelerated model runner ────────────────────────────────────
+  ollama:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.18.0-rocm}
+    container_name: ollama
+    restart: unless-stopped
+
+    # AMD GPU passthrough (ROCm / RDNA 3.5).
+    # Docker has no amdgpu device plugin; pass /dev/kfd + /dev/dri directly.
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - "44"   # video
+      - "992"  # render
+
+    environment:
+      # ROCm target for RDNA 3.5 (gfx1150 — Strix Point/Hawk Point iGPU)
+      # Override if `ollama logs` shows unsupported GFX version.
+      HSA_OVERRIDE_GFX_VERSION: "11.0.2"
+      OLLAMA_KEEP_ALIVE: "5m"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+
+    volumes:
+      # Bind-mount host path so model weights survive container rebuilds.
+      # Partition: /srv/platform — ensure sufficient free space (≥100 GB recommended).
+      - /srv/platform/models:/root/.ollama/models
+
+    # Ollama is reachable only on ai_internal; NOT exposed to host or Traefik.
+    networks:
+      - ai_internal
+
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── LiteLLM — OpenAI-compatible proxy ────────────────────────────────────────
+  litellm:
+    image: ${LITELLM_IMAGE:-ghcr.io/berriai/litellm:main-v1.23.9}
+    container_name: litellm
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+
+    env_file:
+      # Decrypted at runtime by: ./scripts/secrets-decrypt.sh ai
+      # Contains: LITELLM_MASTER_KEY, LITELLM_SECRET_KEY
+      - /srv/platform/secrets/ai.yaml
+
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+
+    # Reachable on ai_internal (Ollama backend) and traefik (Traefik routing).
+    # Port 4000 is NOT mapped to the host.
+    networks:
+      - ai_internal
+      - traefik
+
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    labels:
+      - "traefik.enable=true"
+      # Router: HTTPS API access at https://litellm.hal.local
+      - "traefik.http.routers.litellm.rule=Host(`litellm.hal.local`)"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.tls=true"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+
+  # ── Open WebUI — browser chat interface ──────────────────────────────────────
+  open-webui:
+    image: ${OPEN_WEBUI_IMAGE:-ghcr.io/open-webui/open-webui:v0.8.10}
+    container_name: open-webui
+    restart: unless-stopped
+    depends_on:
+      litellm:
+        condition: service_healthy
+
+    environment:
+      # Backend: route through LiteLLM (not directly to Ollama).
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
+      # Disable built-in Ollama integration; all models via LiteLLM.
+      ENABLE_OLLAMA_API: "false"
+
+    env_file:
+      # Contains: LITELLM_MASTER_KEY (used as OPENAI_API_KEY),
+      #           WEBUI_SECRET_KEY (session signing key)
+      # Decrypted at runtime by: ./scripts/secrets-decrypt.sh ai
+      - /srv/platform/secrets/ai.yaml
+
+    volumes:
+      - open_webui_data:/app/backend/data
+
+    # Reachable on ai_internal (LiteLLM backend) and traefik (Traefik routing).
+    # Port 3000 is NOT mapped to the host.
+    networks:
+      - ai_internal
+      - traefik
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    labels:
+      - "traefik.enable=true"
+      # Router: HTTPS access at https://openwebui.hal.local
+      - "traefik.http.routers.open-webui.rule=Host(`openwebui.hal.local`)"
+      - "traefik.http.routers.open-webui.entrypoints=websecure"
+      - "traefik.http.routers.open-webui.tls=true"
+      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+
+networks:
+  ai_internal:
+    # Private bridge: Ollama ↔ LiteLLM ↔ Open WebUI.
+    # Not internal: containers need outbound internet access to pull models.
+    # Isolation is enforced by the absence of port mappings, not network flags.
+  traefik:
+    external: true
+
+volumes:
+  open_webui_data:
+    # Persists Open WebUI user accounts, chat history, RAG docs, and settings.

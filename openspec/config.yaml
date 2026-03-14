@@ -32,6 +32,7 @@ context: |
   Every infrastructure change must update docs/services-catalog.md, docs/ports.md, and relevant runbooks.
   Create a new ADR (docs/decisions/adr/ADR-NNNN-title.md) for meaningful architectural changes.
   Shell scripts: bash, set -euo pipefail, shellcheck-clean, idempotent where possible.
+  Create a manual test case document for every spec at docs/testcases
 
 rules:
   proposal: |

@@ -104,9 +104,9 @@ for the full architecture, design principles, lifecycle diagram, and graduation 
 | Portainer | https://hal-10k:9443 | ✅ Running |
 | Dockge | http://hal-10k:5001 | ✅ Running |
 | Traefik | http://hal-10k:8080 | ✅ Running  |
-| Ollama | http://hal-10k:11434 | 🔜 Planned |
-| Open WebUI | http://hal-10k:3000 | 🔜 Planned |
-| LiteLLM | http://hal-10k:4000 | 🔜 Planned |
+| Ollama | internal (ai_internal network) | ✅ Running |
+| Open WebUI | https://openwebui.hal.local | ✅ Running |
+| LiteLLM | https://litellm.hal.local | ✅ Running |
 | ChromaDB | http://hal-10k:8000 | 🔜 Planned |
 | n8n | http://hal-10k:5678 | 🔜 Planned |
 | Gitea | http://hal-10k:3001 | 🔜 Planned |
