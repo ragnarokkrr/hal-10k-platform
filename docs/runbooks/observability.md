@@ -91,7 +91,7 @@ docker compose -f compose/observability/docker-compose.yml ps
 ### 1.6 Verify Prometheus targets
 
 ```bash
-curl -sk http://prometheus:9090/api/v1/targets 2>/dev/null | python3 -c "
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/targets' | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 for t in d['data']['activeTargets']:
@@ -100,7 +100,7 @@ for t in d['data']['activeTargets']:
 # Expected: prometheus up, node-exporter up, cadvisor up, traefik up
 ```
 
-Or open Prometheus in the browser: `http://localhost:9090/targets` (direct, no TLS).
+Note: Prometheus is not bound to the host — use `docker exec prometheus` to query it.
 
 ### 1.7 Open Grafana
 
@@ -149,13 +149,13 @@ Edit `compose/observability/prometheus.yml` and add a job under `scrape_configs`
 Reload Prometheus without restart:
 
 ```bash
-curl -X POST http://localhost:9090/-/reload
+docker exec prometheus wget -qO- --post-data='' 'http://localhost:9090/-/reload'
 ```
 
 **Verify**:
 
 ```bash
-curl -s http://localhost:9090/api/v1/targets | python3 -c "
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/targets' | python3 -c "
 import json,sys; d=json.load(sys.stdin)
 for t in d['data']['activeTargets']:
     if t['labels']['job'] == 'my-service':
@@ -180,10 +180,8 @@ docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all
 
 ```bash
 # Query last 5 minutes of Loki for a container
-curl -sG "http://localhost:3100/loki/api/v1/query_range" \
-  --data-urlencode 'query={container_name="traefik"}' \
-  --data-urlencode "start=$(date -d '5 minutes ago' +%s)000000000" \
-  --data-urlencode "end=$(date +%s)000000000" \
+docker exec loki wget -qO- \
+  "http://localhost:3100/loki/api/v1/query_range?query=%7Bcontainer_name%3D%22traefik%22%7D&start=$(date -d '5 minutes ago' +%s)000000000&end=$(date +%s)000000000" \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['data']['result']), 'streams')"
 # Expected: 1 streams (or more)
 ```

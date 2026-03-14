@@ -48,7 +48,7 @@ docker compose -f compose/observability/docker-compose.yml down 2>/dev/null || t
 ### Steps
 
 ```bash
-curl -s http://localhost:9090/api/v1/targets | python3 -c "
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/targets' | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 for t in d['data']['activeTargets']:
@@ -75,15 +75,15 @@ traefik -> up
 
 ```bash
 # CPU metric
-curl -s 'http://localhost:9090/api/v1/query?query=node_cpu_seconds_total' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_cpu_seconds_total' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('CPU series:', len(d['data']['result']))"
 
 # RAM metric
-curl -s 'http://localhost:9090/api/v1/query?query=node_memory_MemTotal_bytes' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_memory_MemTotal_bytes' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); v=d['data']['result'][0]['value'][1]; print('RAM bytes:', v)"
 
 # Disk metric
-curl -s 'http://localhost:9090/api/v1/query?query=node_filesystem_size_bytes{mountpoint=\"/srv/platform\"}' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=node_filesystem_size_bytes%7Bmountpoint%3D%22%2Fsrv%2Fplatform%22%7D' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('Disk series:', len(d['data']['result']))"
 ```
 
@@ -102,7 +102,7 @@ curl -s 'http://localhost:9090/api/v1/query?query=node_filesystem_size_bytes{mou
 ### Steps
 
 ```bash
-curl -s 'http://localhost:9090/api/v1/query?query=traefik_entrypoint_requests_total' \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/query?query=traefik_entrypoint_requests_total' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('Traefik series:', len(d['data']['result']))"
 ```
 
@@ -224,10 +224,8 @@ hal-gpu-rocm       GPU ROCm
 docker logs traefik 2>&1 | tail -1
 
 # Query Loki for traefik logs
-curl -sG "http://localhost:3100/loki/api/v1/query_range" \
-  --data-urlencode 'query={container_name="traefik"}' \
-  --data-urlencode "start=$(python3 -c "import time; print(int((time.time()-300)*1e9))")" \
-  --data-urlencode "end=$(python3 -c "import time; print(int(time.time()*1e9))")" \
+docker exec loki wget -qO- \
+  "http://localhost:3100/loki/api/v1/query_range?query=%7Bcontainer_name%3D%22traefik%22%7D&start=$(python3 -c "import time; print(int((time.time()-300)*1e9))")&end=$(python3 -c "import time; print(int(time.time()*1e9))")" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -256,7 +254,7 @@ else:
 
 ```bash
 # Check TSDB status
-curl -s http://localhost:9090/api/v1/tsdb/status \
+docker exec prometheus wget -qO- 'http://localhost:9090/api/v1/tsdb/status' \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
