@@ -148,11 +148,24 @@ Change artifacts live under `openspec/changes/` and are committed alongside code
 See [ADR-0003](docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md) for the
 full rationale and scope rules.
 
-## Reference Notes (HAL-10k Personal Assistant - Obsidian Vault)
+## Reference Notes (HAL-10k Personal Assistant)
 
-All `homelab`-tagged vault notes used to build this project:
+```
+     . · · · · .
+    · ░░░░░░░░░ ·
+    · ░░( ◉ )░░ ·
+    · ░░░░░░░░░ ·
+     ' · · · · '
+     I'm sorry, Dave.
+     Actually I can do that.
+```
 
-- `homelab/hal-10k` · `homelab/bosgame-m5-ai`
+This Section is infrastructure-facing distillation of knowledge
+accumulated in the **HAL-10k Personal Assistant**. HAL-10k PA is an AI-powered personal knowledge base built on [Obsidian](https://obsidian.md) and [Claude Code](https://claude.ai/claude-code). It combines a structured Obsidian vault with a full suite of Claude Code commands, skills, and multi-agent pipelines — turning a plain Markdown wiki into an intelligent second brain. 
+
+The notes below are the original sources — research, how-tos, and decisions captured during build-out — from which the runbooks, architecture docs, and compose stacks in this repository were derived.
+
+Tags: `homelab/hal-10k` · `homelab/bosgame-m5-ai`
 
 | Note | Topic |
 |------|-------|
