@@ -7,6 +7,29 @@ Configure Claude Code and Cline to use local models via the LiteLLM proxy.
 
 ---
 
+## Pre-condition: Trust the HAL-10k TLS Certificate
+
+The platform uses a self-signed wildcard cert for `*.hal.local`. Add it to your
+laptop's trust store before proceeding — clients that use the system CA bundle
+(including Claude Code and Cline) will fail to connect otherwise.
+
+```bash
+# Copy the cert from HAL-10k
+scp hal-10k:/srv/platform/secrets/hal-local.crt ~/hal-local.crt
+
+# Install into the system trust store
+sudo cp ~/hal-local.crt /usr/local/share/ca-certificates/hal-local.crt
+sudo update-ca-certificates
+```
+
+Verify the endpoint is reachable:
+
+```bash
+curl -sf https://litellm.hal.local/models | python3 -m json.tool
+```
+
+---
+
 ## Get Your API Key
 
 ```bash
@@ -54,6 +77,98 @@ claude config set -g apiKey <LITELLM_MASTER_KEY>
 claude --model qwen2.5-coder:32b "What model are you?"
 ```
 
+### Known Limitation — Agentic Tool Use
+
+Claude Code's agentic capabilities (file edits, bash execution, codebase exploration)
+rely on Anthropic's structured tool use API format. Local models served via Ollama do
+not reliably follow this format — they may describe actions in natural language instead
+of emitting proper tool calls, so tasks like "create a file" or "run tests" will silently
+fail or produce incorrect output.
+
+**Local models are suitable for:** code generation questions, explanations, and chat.
+**Local models are NOT suitable for:** any task that requires Claude Code to take actions
+(read/write files, run commands, search the codebase, etc.).
+
+For agentic work, revert to Anthropic cloud:
+
+```bash
+unset ANTHROPIC_BASE_URL
+unset ANTHROPIC_API_KEY
+claude  # uses stored Anthropic credentials
+```
+
+---
+
+## OpenCode
+
+OpenCode is an open-source terminal coding agent that uses OpenAI function calling
+format natively. It can connect to local models via LiteLLM for chat and code generation.
+
+### Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/opencode-ai/opencode/refs/heads/main/install | bash
+```
+
+### Configure
+
+Create `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "hal": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "HAL-10k",
+      "options": {
+        "baseURL": "https://litellm.hal.local/v1",
+        "apiKey": "{env:LITELLM_API_KEY}"
+      },
+      "models": {
+        "qwen2.5-coder:32b": { "name": "Qwen2.5 Coder 32B" },
+        "deepseek-r1:32b":   { "name": "DeepSeek R1 32B"   },
+        "llama3.3:70b":      { "name": "Llama 3.3 70B"     }
+      }
+    }
+  }
+}
+```
+
+Export the key before launching:
+
+```bash
+export LITELLM_API_KEY=<LITELLM_MASTER_KEY>
+```
+
+### Launch
+
+```bash
+opencode --model hal/qwen2.5-coder:32b
+```
+
+### Verify
+
+```bash
+opencode --model hal/qwen2.5-coder:32b run "What model are you?"
+```
+
+### Known Limitation — Tool Use Blocked by Ollama
+
+Agentic tasks (file edits, bash execution, codebase exploration) require the model to
+make structured function calls. **None of the current Ollama-served models support
+function calling** — Ollama rejects tool-enabled requests for all three models:
+
+| Model | Tools supported |
+|-------|----------------|
+| qwen2.5-coder:32b | No |
+| deepseek-r1:32b | No |
+| llama3.3:70b | No |
+
+This is an Ollama-level constraint, not a client issue. Both OpenCode and Claude Code
+are affected equally. Until Ollama adds tool/function calling support for these models,
+local models are limited to **chat and code generation only**.
+
 ---
 
 ## Cline (VS Code Extension)
@@ -95,20 +210,3 @@ curl -sf \
   https://litellm.hal.local/models | python3 -m json.tool
 ```
 
----
-
-## TLS Certificate Note
-
-The platform uses a self-signed wildcard cert for `*.hal.local`. Clients may warn about
-or reject the certificate.
-
-- **curl**: use `-k` / `--insecure` to skip verification (testing only), or add the cert
-  to your trust store:
-  ```bash
-  sudo cp /srv/platform/secrets/hal-local.crt /usr/local/share/ca-certificates/hal-local.crt
-  sudo update-ca-certificates
-  ```
-- **Python**: set `REQUESTS_CA_BUNDLE` or `SSL_CERT_FILE` to the cert path, or pass
-  `verify=False` to the OpenAI client (testing only).
-- **Claude Code / Cline**: import `hal-local.crt` into your OS trust store; both tools
-  use the system CA bundle.

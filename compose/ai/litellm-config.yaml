@@ -11,19 +11,24 @@ model_list:
 
   - model_name: qwen2.5-coder:32b
     litellm_params:
-      model: ollama/qwen2.5-coder:32b
-      api_base: http://ollama:11434
+      model: openai/qwen2.5-coder:32b
+      api_base: http://ollama:11434/v1
 
   - model_name: deepseek-r1:32b
     litellm_params:
-      model: ollama/deepseek-r1:32b
-      api_base: http://ollama:11434
+      model: openai/deepseek-r1:32b
+      api_base: http://ollama:11434/v1
 
   - model_name: llama3.3:70b
     litellm_params:
-      model: ollama/llama3.3:70b
-      api_base: http://ollama:11434
+      model: openai/llama3.3:70b
+      api_base: http://ollama:11434/v1
 
 general_settings:
   # Master key is injected from /srv/platform/secrets/ai.yaml via env_file.
   master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  # Drop parameters unsupported by the backend model (e.g. Claude Code sends
+  # `thinking` for extended reasoning; Ollama models do not support it).
+  drop_params: true

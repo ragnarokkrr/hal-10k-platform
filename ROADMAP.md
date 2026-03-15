@@ -100,7 +100,56 @@ Deployed early so every subsequent phase can wire up metrics and dashboards incr
 
 ---
 
-## Phase 6 — Experimentation Layer (Distrobox)
+## Phase 6 — LiteLLM Gateway Extraction (Spec 1)
+
+Extract LiteLLM from `compose/ai/` into a standalone `compose/proxy/` stack, making it
+the platform-level API gateway independent of any inference backend. Enables clean
+multi-backend routing and isolates gateway restarts from inference containers.
+
+See: `docs/decisions/adr/ADR-0011-llama-cpp-function-calling-stack.md`
+
+- [ ] Create `compose/proxy/docker-compose.yml` — LiteLLM service with Traefik labels
+- [ ] Create `compose/proxy/litellm-config.yaml` — migrated from `compose/ai/`
+- [ ] Create `compose/proxy/.env.example` — LiteLLM image tag, key references
+- [ ] Create `compose/proxy/.env` — production env (gitignored)
+- [ ] Ensure `ai_internal` network is explicitly created by `compose/core/` as a named network (currently implicit)
+- [ ] Remove LiteLLM service from `compose/ai/docker-compose.yml`
+- [ ] Remove `depends_on: litellm` from Open WebUI in `compose/ai/docker-compose.yml`
+- [ ] Update `docs/runbooks/ai-stack.md` — reflect new stack topology and startup order
+- [ ] Update `docs/runbooks/ai-client-setup.md` — update any LiteLLM compose path references
+- [ ] Update `docs/ports.md` — reassign LiteLLM to `compose/proxy/`
+- [ ] Verify: `curl -sf https://litellm.hal.local/models` — all existing models still listed
+- [ ] Verify: Open WebUI chat still functional end-to-end
+
+---
+
+## Phase 7 — llama.cpp Function-Calling Stack (Spec 2)
+
+Add a parallel inference stack `compose/ai-tools/` running llama.cpp for tool/function
+calling workloads. Enables agentic AI clients (Claude Code, OpenCode) to use local
+models for file edits, bash execution, and codebase navigation.
+
+See: `docs/decisions/adr/ADR-0011-llama-cpp-function-calling-stack.md`
+
+- [ ] Create `/srv/platform/models/gguf/` directory on HAL-10k
+- [ ] `docs/runbooks/gguf-model-setup.md` — GGUF download, verification, GPU layer tuning
+- [ ] Download initial GGUF models (bartowski quantisations, Q4_K_M):
+  - [ ] `qwen2.5-coder-32b-instruct-q4_k_m.gguf` (~19 GB)
+  - [ ] `llama3.3-70b-instruct-q4_k_m.gguf` (~43 GB)
+- [ ] Create `compose/ai-tools/docker-compose.yml` — llama.cpp server (ROCm image, `--jinja` flag)
+- [ ] Create `compose/ai-tools/.env.example` — image tag, model path
+- [ ] Add `-tools` model aliases to `compose/proxy/litellm-config.yaml`:
+  - [ ] `qwen2.5-coder:32b-tools` → llama.cpp backend
+  - [ ] `llama3.3:70b-tools` → llama.cpp backend
+- [ ] Update `docs/runbooks/ai-client-setup.md`:
+  - [ ] Document `-tools` model aliases for OpenCode and Claude Code
+  - [ ] Remove tool-use limitation notes resolved by this phase
+- [ ] Verify function calling end-to-end: POST `/v1/chat/completions` with `tools` array → `tool_calls` in response
+- [ ] Verify OpenCode agentic session creates files and runs bash commands via `qwen2.5-coder:32b-tools`
+
+---
+
+## Phase 8 — Experimentation Layer (Distrobox)
 
 Establish the Experimentation Layer as a formal, documented tier of the HAL-10k lab
 for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podman) at
@@ -119,7 +168,7 @@ for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podm
 
 ---
 
-## Phase 6.5 — Experiment Lifecycle Tracking (Backlog.md)
+## Phase 8.5 — Experiment Lifecycle Tracking (Backlog.md)
 
 Track Distrobox experiment lifecycle inside the provisioning repo using Backlog.md.
 
@@ -137,7 +186,7 @@ Track Distrobox experiment lifecycle inside the provisioning repo using Backlog.
 
 ---
 
-## Phase 7 — Data & Vector Store
+## Phase 9 — Data & Vector Store
 
 Persistent storage layer for embeddings and RAG pipelines.
 
@@ -150,19 +199,19 @@ Persistent storage layer for embeddings and RAG pipelines.
 
 ---
 
-## Phase 8 — Workflow Automation (n8n)
+## Phase 10 — Workflow Automation (n8n)
 
 Orchestration layer for AI pipelines and integrations.
 
 - [ ] `compose/workflows/docker-compose.yml` — n8n
 - [ ] `secrets/workflows.enc.yaml`
 - [ ] `docs/runbooks/workflows-n8n.md`
-- [ ] Initial workflow: HAL-10k PA → Ollama → ChromaDB
+- [ ] Initial workflow: HAL-10k PA → local models via LiteLLM → ChromaDB
 - [ ] Grafana: add n8n workflow execution count and error rate dashboard
 
 ---
 
-## Phase 9 — Implementing Gitea (Self-Hosted Git)
+## Phase 11 — Implementing Gitea (Self-Hosted Git)
 
 Replace GitHub dependency with an on-prem git server for full self-sufficiency.
 
@@ -182,6 +231,6 @@ Replace GitHub dependency with an on-prem git server for full self-sufficiency.
 
 - Automated backup rotation scripts (`scripts/backup-*.sh`)
 - Secret rotation runbook
-- HAL-10k PA integration — Claude Code pointing to local Ollama via LiteLLM proxy
-- Multi-model routing strategy implementation (Qwen2.5 / DeepSeek / Llama routing)
+- GGUF deduplication: script to symlink blobs from Ollama's content-addressed store into `/srv/platform/models/gguf/` (eliminates duplicate disk usage between Phase 7 and Ollama)
+- vLLM evaluation ADR — revisit when hardware upgrades to discrete AMD GPU (RX 7900 XTX or MI-series)
 - Disaster recovery runbook (full restore from Timeshift + Compose re-deploy)
