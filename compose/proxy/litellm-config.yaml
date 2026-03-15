@@ -1,11 +1,11 @@
-# compose/ai/litellm-config.yaml
+# compose/proxy/litellm-config.yaml
 # LiteLLM proxy model routing configuration.
 # Version-controlled (no secrets). Secrets are injected via env_file at runtime.
 #
 # To add a new model:
 #   1. Pull it in Ollama:  docker exec ollama ollama pull <model>:<tag>
 #   2. Add an entry below  (model_name, litellm_params.model, api_base)
-#   3. Restart LiteLLM:    docker compose -f compose/ai/docker-compose.yml restart litellm
+#   3. Restart LiteLLM:    docker compose -f compose/proxy/docker-compose.yml restart litellm
 
 model_list:
 
@@ -25,7 +25,7 @@ model_list:
       api_base: http://ollama:11434/v1
 
 general_settings:
-  # Master key is injected from /srv/platform/secrets/ai.yaml via env_file.
+  # Master key is injected from /srv/platform/secrets/proxy.yaml via env_file.
   master_key: os.environ/LITELLM_MASTER_KEY
 
 litellm_settings:

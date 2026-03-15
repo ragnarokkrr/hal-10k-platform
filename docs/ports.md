@@ -23,7 +23,7 @@ Update this file whenever a new service is added or a port changes.
 | Port | Protocol | Service | Stack | Hostname | Access |
 |------|----------|---------|-------|----------|--------|
 | 3000 | TCP | Open WebUI | `compose/ai` | `openwebui.hal.local` | Via Traefik |
-| 4000 | TCP | LiteLLM Proxy | `compose/ai` | `litellm.hal.local` | Via Traefik |
+| 4000 | TCP | LiteLLM Proxy | `compose/proxy` | `litellm.hal.local` | Via Traefik |
 | 11434 | TCP | Ollama | `compose/ai` | — | Internal only |
 | 3000 | TCP | Grafana | `compose/observability` | `grafana.hal.local` | Via Traefik |
 | 9090 | TCP | Prometheus | `compose/observability` | — | Internal only |

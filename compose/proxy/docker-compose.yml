@@ -1,0 +1,62 @@
+# compose/proxy/docker-compose.yml
+# LiteLLM API Gateway — standalone proxy stack
+#
+# Prerequisites:
+#   1. compose/core/ running (traefik network exists)
+#   2. compose/ai/ running (ai_internal network exists, Ollama reachable)
+#   3. Proxy secrets decrypted: ./scripts/secrets-decrypt.sh proxy
+#   4. Image tag set: copy .env.example → .env, confirm tag
+#
+# Bring up:  docker compose -f compose/proxy/docker-compose.yml up -d
+# Tear down: docker compose -f compose/proxy/docker-compose.yml down
+# Pull logs: docker compose -f compose/proxy/docker-compose.yml logs -f
+#
+# Network topology:
+#   traefik (external)    ← Traefik routes HTTPS to litellm
+#   ai_internal (external) ← litellm reaches ollama backend
+
+services:
+
+  # ── LiteLLM — OpenAI-compatible API gateway ──────────────────────────────────
+  litellm:
+    image: ${LITELLM_IMAGE:-ghcr.io/berriai/litellm:main-v1.81.12-stable.1}
+    container_name: litellm
+    restart: unless-stopped
+
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+
+    env_file:
+      # Decrypted at runtime by: ./scripts/secrets-decrypt.sh proxy
+      # Contains: LITELLM_MASTER_KEY, LITELLM_SECRET_KEY
+      - /srv/platform/secrets/proxy.yaml
+
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+
+    # Reachable on ai_internal (Ollama backend) and traefik (Traefik routing).
+    # Port 4000 is NOT mapped to the host.
+    networks:
+      - ai_internal
+      - traefik
+
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    labels:
+      - "traefik.enable=true"
+      # Router: HTTPS API access at https://litellm.hal.local
+      - "traefik.http.routers.litellm.rule=Host(`litellm.hal.local`)"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.tls=true"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+
+networks:
+  ai_internal:
+    external: true
+    name: ai_internal
+  traefik:
+    external: true

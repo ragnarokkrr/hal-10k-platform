@@ -108,18 +108,17 @@ multi-backend routing and isolates gateway restarts from inference containers.
 
 See: `docs/decisions/adr/ADR-0011-llama-cpp-function-calling-stack.md`
 
-- [ ] Create `compose/proxy/docker-compose.yml` — LiteLLM service with Traefik labels
-- [ ] Create `compose/proxy/litellm-config.yaml` — migrated from `compose/ai/`
-- [ ] Create `compose/proxy/.env.example` — LiteLLM image tag, key references
-- [ ] Create `compose/proxy/.env` — production env (gitignored)
-- [ ] Ensure `ai_internal` network is explicitly created by `compose/core/` as a named network (currently implicit)
-- [ ] Remove LiteLLM service from `compose/ai/docker-compose.yml`
-- [ ] Remove `depends_on: litellm` from Open WebUI in `compose/ai/docker-compose.yml`
-- [ ] Update `docs/runbooks/ai-stack.md` — reflect new stack topology and startup order
-- [ ] Update `docs/runbooks/ai-client-setup.md` — update any LiteLLM compose path references
-- [ ] Update `docs/ports.md` — reassign LiteLLM to `compose/proxy/`
-- [ ] Verify: `curl -sf https://litellm.hal.local/models` — all existing models still listed
-- [ ] Verify: Open WebUI chat still functional end-to-end
+- [x] Create `compose/proxy/docker-compose.yml` — LiteLLM service with Traefik labels
+- [x] Create `compose/proxy/litellm-config.yaml` — migrated from `compose/ai/`
+- [x] Create `compose/proxy/.env.example` — LiteLLM image tag, key references
+- [x] Create `compose/proxy/.env` — production env (gitignored)
+- [x] Ensure `ai_internal` network is named explicitly (`name: ai_internal` in `compose/ai/`; `compose/proxy/` references as external)
+- [x] Remove LiteLLM service from `compose/ai/docker-compose.yml`
+- [x] Remove `depends_on: litellm` from Open WebUI in `compose/ai/docker-compose.yml`
+- [x] Update `docs/runbooks/ai-stack.md` — reflect new stack topology and startup order
+- [x] Update `docs/ports.md` — reassign LiteLLM to `compose/proxy/`
+- [x] Verify: `curl -sf https://litellm.hal.local/models` — all existing models still listed
+- [x] Verify: Open WebUI chat still functional end-to-end
 
 ---
 

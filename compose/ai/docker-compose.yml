@@ -12,7 +12,7 @@
 #
 # Network topology:
 #   traefik (external) ← Traefik routes to litellm + open-webui
-#   ai_internal        ← ollama ↔ litellm ↔ open-webui (not Traefik-visible)
+#   ai_internal        ← ollama ↔ open-webui ↔ litellm (compose/proxy/)
 
 services:
 
@@ -55,54 +55,11 @@ services:
       retries: 5
       start_period: 30s
 
-  # ── LiteLLM — OpenAI-compatible proxy ────────────────────────────────────────
-  litellm:
-    image: ${LITELLM_IMAGE:-ghcr.io/berriai/litellm:main-v1.23.9}
-    container_name: litellm
-    restart: unless-stopped
-    depends_on:
-      ollama:
-        condition: service_healthy
-
-    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
-
-    env_file:
-      # Decrypted at runtime by: ./scripts/secrets-decrypt.sh ai
-      # Contains: LITELLM_MASTER_KEY, LITELLM_SECRET_KEY
-      - /srv/platform/secrets/ai.yaml
-
-    volumes:
-      - ./litellm-config.yaml:/app/config.yaml:ro
-
-    # Reachable on ai_internal (Ollama backend) and traefik (Traefik routing).
-    # Port 4000 is NOT mapped to the host.
-    networks:
-      - ai_internal
-      - traefik
-
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-    labels:
-      - "traefik.enable=true"
-      # Router: HTTPS API access at https://litellm.hal.local
-      - "traefik.http.routers.litellm.rule=Host(`litellm.hal.local`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.tls=true"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
-
   # ── Open WebUI — browser chat interface ──────────────────────────────────────
   open-webui:
     image: ${OPEN_WEBUI_IMAGE:-ghcr.io/open-webui/open-webui:v0.8.10}
     container_name: open-webui
     restart: unless-stopped
-    depends_on:
-      litellm:
-        condition: service_healthy
 
     environment:
       # Backend: route through LiteLLM (not directly to Ollama).
@@ -142,9 +99,11 @@ services:
 
 networks:
   ai_internal:
-    # Private bridge: Ollama ↔ LiteLLM ↔ Open WebUI.
+    # Shared bridge: Ollama ↔ Open WebUI ↔ LiteLLM (compose/proxy/).
+    # Owned here so it exists before compose/proxy/ starts.
+    # compose/proxy/ references it as external: true, name: ai_internal.
     # Not internal: containers need outbound internet access to pull models.
-    # Isolation is enforced by the absence of port mappings, not network flags.
+    name: ai_internal
   traefik:
     external: true
 
