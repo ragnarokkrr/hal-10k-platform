@@ -185,3 +185,40 @@ manual validate → run bootstrap / compose checks
 
 See [ADR-0003](docs/decisions/adr/ADR-0003-spec-driven-development-openspec.md) and
 the [README](README.md#spec-driven-development) for full details.
+
+---
+
+## Experiment Tracking
+
+Distrobox containers in the Experimentation Layer (`/srv/experiments/`) are tracked
+using **[Backlog.md](https://github.com/MrLesk/Backlog.md)** at `experiments/backlog/`.
+Each container has one task entry that moves through six lifecycle states — from initial
+`IDEA` through active experimentation to `PROMOTED` (a Docker Compose service) or
+closed as cancelled. This gives the provisioning repo a version-controlled record of
+what is being explored, what is stable, and what has graduated to the Platform Layer,
+without requiring any external issue tracker.
+
+### Lifecycle State → Backlog.md Mapping
+
+| Lifecycle State        | status       | label                  | Meaning                                                    |
+|------------------------|--------------|------------------------|------------------------------------------------------------|
+| `IDEA`                 | `todo`       | `idea`                 | Container not yet created; concept noted                   |
+| `RAW`                  | `todo`       | `raw`                  | Container created, active exploration, not yet stable      |
+| `VALIDATED`            | `in-progress`| `validated`            | Stable in container; used consistently                     |
+| `GRADUATION-CANDIDATE` | `in-progress`| `graduation-candidate` | 2+ weeks daily use; config stabilized; runbook drafted     |
+| `GRADUATING`           | `in-progress`| `graduating`           | OpenSpec proposal raised; Docker stack in progress         |
+| `PROMOTED`             | `done`       | `promoted`             | Docker Compose stack merged; Distrobox container retired   |
+| `ABANDONED`            | `done`       | `abandoned`            | Experiment closed; not worth promoting; container removed  |
+
+### Graduation → OpenSpec Handoff
+
+When all four graduation checklist items in a task are checked and the container has
+been in `GRADUATION-CANDIDATE` state for at least one week, trigger an OpenSpec change:
+
+```
+/opsx:propose add-<container-name>-to-platform
+```
+
+This opens a new spec-driven change to add the experiment as a Docker Compose service
+under `compose/`. The Distrobox container is retired once the new stack is deployed and
+verified. See `experiments/README.md` for full details.

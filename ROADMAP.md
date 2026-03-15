@@ -119,6 +119,24 @@ for disposable, GPU-accelerated ML experiments. Runs on Distrobox (rootless Podm
 
 ---
 
+## Phase 6.5 — Experiment Lifecycle Tracking (Backlog.md)
+
+Track Distrobox experiment lifecycle inside the provisioning repo using Backlog.md.
+
+- [ ] Install Backlog.md CLI: `npm install -g @mrleskbacklog/backlog.md` (verify current package name) (**future**)
+- [ ] Bootstrap the Backlog.md project non-interactively (preserves pre-seeded tasks and IDs):
+      `cd experiments && backlog init "HAL-10k Experiments" --defaults --task-prefix exp --integration-mode none` (**future**)
+- [ ] Create `experiments/` directory in the repo root (**done** — seeded below)
+- [ ] Seed `experiments/backlog/tasks/` — initial task files for all 5 standard containers in `To Do` / `idea` state:
+      `ml-lab`, `llama-build`, `agents-dev`, `ragna-ml`, `torch-nightly` (**done**)
+- [ ] Define label taxonomy: `idea` | `raw` | `validated` | `graduation-candidate` | `graduating` | `promoted` (**done**)
+- [ ] Add graduation checklist template to `experiments/README.md` (**done**)
+- [ ] Update `WORKFLOW.md` — add "Experiment Tracking" section documenting the
+      Backlog.md → OpenSpec graduation trigger (**done**)
+- [ ] Add `docs/decisions/adr/ADR-0010-experiment-lifecycle-tracking-backlog-md.md` (**done**)
+
+---
+
 ## Phase 7 — Data & Vector Store
 
 Persistent storage layer for embeddings and RAG pipelines.

@@ -1,0 +1,19 @@
+project_name: "HAL-10k Experiments"
+default_status: "To Do"
+statuses:
+  - "To Do"
+  - "In Progress"
+  - "Done"
+labels:
+  - idea
+  - raw
+  - validated
+  - graduation-candidate
+  - graduating
+  - promoted
+  - abandoned
+prefixes:
+  task: "exp"
+auto_commit: false
+zero_padded_ids: 3
+date_format: "yyyy-mm-dd"
