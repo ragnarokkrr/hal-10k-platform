@@ -1,7 +1,7 @@
 # Runbook: AI Inference Stack
 
-**Stacks**: `compose/ai/` · `compose/proxy/`
-**Services**: Ollama · Open WebUI (`compose/ai/`) — LiteLLM (`compose/proxy/`)
+**Stacks**: `compose/ai/` · `compose/proxy/` · `compose/ai-tools/` (optional)
+**Services**: Ollama · Open WebUI (`compose/ai/`) — LiteLLM (`compose/proxy/`) — llama.cpp × N (`compose/ai-tools/`)
 **Related ADRs**: [ADR-0006](../decisions/adr/ADR-0006-llm-serving-ollama-litellm.md) · [ADR-0011](../decisions/adr/ADR-0011-llama-cpp-function-calling-stack.md)
 
 ---
@@ -11,16 +11,21 @@
 ```
 Clients (Claude Code, OpenCode, browser)
          ↓ HTTPS via Traefik
-  compose/proxy/   — LiteLLM API gateway (litellm.hal.local)
+  compose/proxy/     — LiteLLM API gateway (litellm.hal.local)
          ↓ ai_internal network
-  compose/ai/      — Ollama (inference) · Open WebUI (openwebui.hal.local)
+  compose/ai/        — Ollama (chat inference) · Open WebUI (openwebui.hal.local)
+  compose/ai-tools/  — llama.cpp × N containers (tool-calling inference, on-demand)
 ```
 
 **Startup order**: `compose/core/` → `compose/ai/` → `compose/proxy/`
-**Teardown order**: `compose/proxy/` → `compose/ai/` → `compose/core/`
+**Startup order (with tool-calling)**: `compose/core/` → `compose/ai/` → `compose/proxy/` → `compose/ai-tools/` (on demand)
+**Teardown order**: `compose/ai-tools/` → `compose/proxy/` → `compose/ai/` → `compose/core/`
 
 The `ai_internal` Docker network is owned by `compose/ai/` (created with `name: ai_internal`).
-It must exist before `compose/proxy/` starts.
+It must exist before `compose/proxy/` or `compose/ai-tools/` start.
+
+`compose/ai-tools/` is **operator-controlled** — it is not auto-started. Start specific
+llama.cpp containers on demand based on workload. See [VRAM Budget](#vram-budget) below.
 
 ---
 
@@ -104,6 +109,49 @@ docker compose -f compose/proxy/docker-compose.yml ps
 ```
 
 Allow 60–90 seconds for LiteLLM to reach healthy status.
+
+---
+
+## 2b. Bring Up Tool-Calling Stack (Optional)
+
+`compose/ai-tools/` runs llama.cpp containers for function/tool calling. Start only
+when agentic sessions require it. Each model needs ~23 GB VRAM.
+
+```bash
+cd /srv/platform/repos/hal-10k-platform
+
+# Prerequisites: GGUF models downloaded to /srv/platform/models/gguf/
+# See docs/runbooks/gguf-model-setup.md
+
+# Copy and configure .env
+cd compose/ai-tools && cp .env.example .env
+# Edit .env — set LLAMACPP_IMAGE digest (see .env.example for instructions)
+
+# Start specific models (recommended — controls VRAM usage)
+docker compose -f compose/ai-tools/docker-compose.yml up -d llama-cpp-qwen32b
+docker compose -f compose/ai-tools/docker-compose.yml up -d llama-cpp-deepseek32b
+
+# Or start all three (verify VRAM budget first)
+docker compose -f compose/ai-tools/docker-compose.yml up -d
+
+# Stop a model to free VRAM
+docker compose -f compose/ai-tools/docker-compose.yml stop llama-cpp-llama70b
+```
+
+### VRAM Budget
+
+ROCm-accessible VRAM: ~56 GB (carved from 128 GB unified system memory).
+
+| Running | VRAM estimate | Feasibility |
+|---------|---------------|-------------|
+| 1× 32B llama.cpp | ~23 GB | Trivial |
+| 2× 32B llama.cpp | ~46 GB | Comfortable |
+| 2× 32B llama.cpp + Ollama 32B loaded | ~76 GB | Tight / may fail |
+| 1× 32B + 1× 70B llama.cpp | ~23 + 48 GB = ~71 GB | Over limit |
+
+> When using Ollama for chat alongside llama.cpp, unload Ollama models when not needed:
+> `docker exec ollama ollama stop <model-name>`
+> (The Ollama image has no curl or wget — use the bundled `ollama` CLI.)
 
 ---
 
@@ -281,8 +329,12 @@ docker compose -f compose/ai/docker-compose.yml logs -f
 # Proxy stack
 docker compose -f compose/proxy/docker-compose.yml logs -f
 
+# Tool-calling stack
+docker compose -f compose/ai-tools/docker-compose.yml logs -f
+
 # Individual containers
 docker logs -f ollama
 docker logs -f litellm
 docker logs -f open-webui
+docker logs -f llama-cpp-qwen32b
 ```

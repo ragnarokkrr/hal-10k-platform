@@ -37,7 +37,7 @@
 
 - [x] 6.1 Update `docs/runbooks/ai-stack.md` — reflect new four-stack topology (core → ai + proxy), new startup order (core → ai → proxy), new teardown order (proxy → ai → core), note LiteLLM is now in a separate stack; add step to decrypt proxy secrets (`scripts/secrets-decrypt.sh proxy`)
 - [x] 6.2 Update `docs/ports.md` — reassign the LiteLLM row from `compose/ai/` to `compose/proxy/`
-- [x] 6.3 Create `docs/runbooks/test-phase-6-proxy-extraction.md` — step-by-step user test case covering: (a) verify `ai_internal` network exists and both `litellm` and `ollama` containers are attached; (b) verify `compose/ai/` has no litellm container; (c) verify LiteLLM models endpoint lists all three models; (d) verify Open WebUI chat completes a round-trip via the proxy; (e) verify Traefik routes `litellm.hal.local` and `openwebui.hal.local` independently; (f) verify proxy stack can restart without affecting `compose/ai/`
+- [x] 6.3 Create `docs/testcases/test-phase-6-proxy-extraction.md` — step-by-step user test case covering: (a) verify `ai_internal` network exists and both `litellm` and `ollama` containers are attached; (b) verify `compose/ai/` has no litellm container; (c) verify LiteLLM models endpoint lists all three models; (d) verify Open WebUI chat completes a round-trip via the proxy; (e) verify Traefik routes `litellm.hal.local` and `openwebui.hal.local` independently; (f) verify proxy stack can restart without affecting `compose/ai/`
 - [x] 6.4 Update `ROADMAP.md` — mark all Phase 6 checklist items as `[x]`
 
 ## 7. OpenSpec Archive

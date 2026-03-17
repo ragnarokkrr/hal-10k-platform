@@ -13,16 +13,52 @@ model_list:
     litellm_params:
       model: openai/qwen2.5-coder:32b
       api_base: http://ollama:11434/v1
+      api_key: "ollama"  # Ollama has no auth; dummy key required by LiteLLM openai/ prefix
 
   - model_name: deepseek-r1:32b
     litellm_params:
       model: openai/deepseek-r1:32b
       api_base: http://ollama:11434/v1
+      api_key: "ollama"  # Ollama has no auth; dummy key required by LiteLLM openai/ prefix
 
   - model_name: llama3.3:70b
     litellm_params:
       model: openai/llama3.3:70b
       api_base: http://ollama:11434/v1
+      api_key: "ollama"  # Ollama has no auth; dummy key required by LiteLLM openai/ prefix
+
+  # ── Tool-capable aliases — llama.cpp backends (compose/ai-tools/) ──────────
+  # Each alias routes to a dedicated llama.cpp container on ai_internal.
+  # If a container is not running, LiteLLM returns 502 for that alias only
+  # and recovers automatically when the container starts.
+  # Start backends: docker compose -f compose/ai-tools/docker-compose.yml up -d
+
+  - model_name: qwen2.5-coder:32b-tools
+    litellm_params:
+      model: openai/qwen2.5-coder:32b
+      api_base: http://llama-cpp-qwen32b:8080/v1
+      api_key: "llama"  # llama.cpp has no auth; dummy key required by LiteLLM
+      # tool_choice injected conditionally by tool_choice_hook.py (only for execution requests)
+    model_info:
+      supports_function_calling: true
+
+  - model_name: deepseek-r1:32b-tools
+    litellm_params:
+      model: openai/deepseek-r1:32b
+      api_base: http://llama-cpp-deepseek32b:8080/v1
+      api_key: "llama"  # llama.cpp has no auth; dummy key required by LiteLLM
+      # tool_choice injected conditionally by tool_choice_hook.py (only for execution requests)
+    model_info:
+      supports_function_calling: true
+
+  - model_name: llama3.3:70b-tools
+    litellm_params:
+      model: openai/llama3.3:70b
+      api_base: http://llama-cpp-llama70b:8080/v1
+      api_key: "llama"  # llama.cpp has no auth; dummy key required by LiteLLM
+      # tool_choice injected conditionally by tool_choice_hook.py (only for execution requests)
+    model_info:
+      supports_function_calling: true
 
 general_settings:
   # Master key is injected from /srv/platform/secrets/proxy.yaml via env_file.
@@ -32,3 +68,6 @@ litellm_settings:
   # Drop parameters unsupported by the backend model (e.g. Claude Code sends
   # `thinking` for extended reasoning; Ollama models do not support it).
   drop_params: true
+  # Inject tool_choice=required for llama.cpp tool models only on execution requests.
+  # See tool_choice_hook.py for logic — skips the Build/question step (question tool only).
+  callbacks: ["tool_choice_hook.proxy_handler_instance"]

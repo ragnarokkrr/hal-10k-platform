@@ -130,21 +130,27 @@ models for file edits, bash execution, and codebase navigation.
 
 See: `docs/decisions/adr/ADR-0011-llama-cpp-function-calling-stack.md`
 
-- [ ] Create `/srv/platform/models/gguf/` directory on HAL-10k
-- [ ] `docs/runbooks/gguf-model-setup.md` — GGUF download, verification, GPU layer tuning
-- [ ] Download initial GGUF models (bartowski quantisations, Q4_K_M):
-  - [ ] `qwen2.5-coder-32b-instruct-q4_k_m.gguf` (~19 GB)
-  - [ ] `llama3.3-70b-instruct-q4_k_m.gguf` (~43 GB)
-- [ ] Create `compose/ai-tools/docker-compose.yml` — llama.cpp server (ROCm image, `--jinja` flag)
-- [ ] Create `compose/ai-tools/.env.example` — image tag, model path
-- [ ] Add `-tools` model aliases to `compose/proxy/litellm-config.yaml`:
-  - [ ] `qwen2.5-coder:32b-tools` → llama.cpp backend
-  - [ ] `llama3.3:70b-tools` → llama.cpp backend
-- [ ] Update `docs/runbooks/ai-client-setup.md`:
-  - [ ] Document `-tools` model aliases for OpenCode and Claude Code
-  - [ ] Remove tool-use limitation notes resolved by this phase
-- [ ] Verify function calling end-to-end: POST `/v1/chat/completions` with `tools` array → `tool_calls` in response
-- [ ] Verify OpenCode agentic session creates files and runs bash commands via `qwen2.5-coder:32b-tools`
+- [x] Create `/srv/platform/models/gguf/` directory on HAL-10k
+- [x] `docs/runbooks/gguf-model-setup.md` — GGUF download, verification, GPU layer tuning
+- [x] Download initial GGUF models (bartowski quantisations, Q4_K_M):
+  - [x] `Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf` (~19 GB)
+  - [x] `DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf` (~19 GB)
+  - [x] `Llama-3.3-70B-Instruct-Q4_K_M.gguf` (~40 GB, SHA256 verified)
+- [x] Create `compose/ai-tools/docker-compose.yml` — llama.cpp server (ROCm image, `--jinja`, `--metrics` flags)
+- [x] Create `compose/ai-tools/.env.example` — image digest, model paths, GPU layer tuning
+- [x] Add `-tools` model aliases to `compose/proxy/litellm-config.yaml`:
+  - [x] `qwen2.5-coder:32b-tools` → llama.cpp backend
+  - [x] `deepseek-r1:32b-tools` → llama.cpp backend
+  - [x] `llama3.3:70b-tools` → llama.cpp backend
+- [x] Update `docs/runbooks/ai-client-setup.md`:
+  - [x] Document `-tools` model aliases for OpenCode and Claude Code
+  - [x] Remove tool-use limitation notes resolved by this phase
+- [x] Verify function calling end-to-end: POST `/v1/chat/completions` with `tools` array → `tool_calls` in response
+- [x] Verify OpenCode agentic session creates files and runs bash commands via `qwen2.5-coder:32b-tools`
+
+**Notes from implementation:**
+- ADR-0012: Actual ROCm-accessible VRAM is ~56 GB, not 96 GB — the full 128 GB unified memory is not GPU-addressable via HIP. Practical limit: 2× 32B llama.cpp containers (~46 GB); adding a loaded Ollama 32B model (~30 GB) exceeds the budget. Operator must coordinate model loading.
+- ADR-0013: llama.cpp (build b8390) streaming bug — without `tool_choice: "required"`, tool call XML leaks as plain text instead of populating `tool_calls`. Fixed via a LiteLLM pre-call hook (`compose/proxy/tool_choice_hook.py`) that injects `tool_choice: "required"` only for execution-phase requests. Monitor upstream llama.cpp releases for fix.
 
 ---
 

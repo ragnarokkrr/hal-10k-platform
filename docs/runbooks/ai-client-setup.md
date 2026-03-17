@@ -1,4 +1,4 @@
-# Runbook: AI Client Setup — Claude Code & Cline
+# Runbook: AI Client Setup — Claude Code, OpenCode & Cline
 
 Configure Claude Code and Cline to use local models via the LiteLLM proxy.
 
@@ -25,7 +25,9 @@ sudo update-ca-certificates
 Verify the endpoint is reachable:
 
 ```bash
-curl -sf https://litellm.hal.local/models | python3 -m json.tool
+curl -sf \
+  -H "Authorization: Bearer $(grep LITELLM_MASTER_KEY /srv/platform/secrets/ai.yaml | cut -d' ' -f2)" \
+  https://litellm.hal.local/models | python3 -m json.tool
 ```
 
 ---
@@ -77,25 +79,35 @@ claude config set -g apiKey <LITELLM_MASTER_KEY>
 claude --model qwen2.5-coder:32b "What model are you?"
 ```
 
-### Known Limitation — Agentic Tool Use
+### Agentic Tool Use — Use `-tools` Model Aliases
 
 Claude Code's agentic capabilities (file edits, bash execution, codebase exploration)
-rely on Anthropic's structured tool use API format. Local models served via Ollama do
-not reliably follow this format — they may describe actions in natural language instead
-of emitting proper tool calls, so tasks like "create a file" or "run tests" will silently
-fail or produce incorrect output.
-
-**Local models are suitable for:** code generation questions, explanations, and chat.
-**Local models are NOT suitable for:** any task that requires Claude Code to take actions
-(read/write files, run commands, search the codebase, etc.).
-
-For agentic work, revert to Anthropic cloud:
+require structured function/tool calls. Use the `-tools` suffix aliases to route to the
+llama.cpp backends, which support function calling via Jinja2 chat templates:
 
 ```bash
-unset ANTHROPIC_BASE_URL
-unset ANTHROPIC_API_KEY
-claude  # uses stored Anthropic credentials
+# Start the llama.cpp backends first (if not already running)
+docker compose -f /srv/platform/repos/hal-10k-platform/compose/ai-tools/docker-compose.yml \
+  up -d llama-cpp-qwen32b
+
+# Use the -tools alias for agentic sessions
+claude --model qwen2.5-coder:32b-tools
 ```
+
+| Model alias | Backend | Tool calling |
+|-------------|---------|-------------|
+| `qwen2.5-coder:32b` | Ollama | No |
+| `qwen2.5-coder:32b-tools` | llama.cpp | **Yes** |
+| `deepseek-r1:32b` | Ollama | No |
+| `deepseek-r1:32b-tools` | llama.cpp | **Yes** |
+| `llama3.3:70b` | Ollama | No |
+| `llama3.3:70b-tools` | llama.cpp | **Yes** |
+
+> **Note:** The llama.cpp backends in `compose/ai-tools/` are not auto-started.
+> Start them on demand before agentic sessions and stop them when done to free VRAM.
+> See [VRAM budget notes](gguf-model-setup.md#vram-budget) for multi-model constraints.
+
+For chat-only use, the non-`-tools` aliases via Ollama are preferred (lighter weight).
 
 ---
 
@@ -126,48 +138,75 @@ Create `~/.config/opencode/opencode.json`:
         "apiKey": "{env:LITELLM_API_KEY}"
       },
       "models": {
-        "qwen2.5-coder:32b": { "name": "Qwen2.5 Coder 32B" },
-        "deepseek-r1:32b":   { "name": "DeepSeek R1 32B"   },
-        "llama3.3:70b":      { "name": "Llama 3.3 70B"     }
+        "qwen2.5-coder:32b":       { "name": "Qwen2.5 Coder 32B (chat)"  },
+        "qwen2.5-coder:32b-tools": { "name": "Qwen2.5 Coder 32B (tools)" },
+        "deepseek-r1:32b":         { "name": "DeepSeek R1 32B (chat)"    },
+        "deepseek-r1:32b-tools":   { "name": "DeepSeek R1 32B (tools)"   },
+        "llama3.3:70b":            { "name": "Llama 3.3 70B (chat)"      },
+        "llama3.3:70b-tools":      { "name": "Llama 3.3 70B (tools)"     }
       }
     }
   }
 }
 ```
 
-Export the key before launching:
+### TLS: Trust the HAL-10k Certificate
+
+OpenCode is a Node.js app and **does not use the system CA trust store**. Set
+`NODE_EXTRA_CA_CERTS` to avoid "self signed certificate" errors:
 
 ```bash
-export LITELLM_API_KEY=<LITELLM_MASTER_KEY>
+# On HAL-10k
+export NODE_EXTRA_CA_CERTS=/srv/platform/secrets/hal-local.crt
+
+# On a remote laptop (after the scp in Pre-conditions above)
+export NODE_EXTRA_CA_CERTS=~/hal-local.crt
 ```
+
+Add to `~/.bashrc` or `~/.zshrc` to make it permanent.
 
 ### Launch
 
 ```bash
+export LITELLM_API_KEY=<LITELLM_MASTER_KEY>
+export NODE_EXTRA_CA_CERTS=~/hal-local.crt  # or /srv/platform/secrets/hal-local.crt on HAL-10k
 opencode --model hal/qwen2.5-coder:32b
 ```
 
 ### Verify
 
 ```bash
-opencode --model hal/qwen2.5-coder:32b run "What model are you?"
+opencode --model hal/qwen2.5-coder:32b run "What is 2+2?"
 ```
 
-### Known Limitation — Tool Use Blocked by Ollama
+### Agentic Tool Use — Use `-tools` Model Aliases
 
-Agentic tasks (file edits, bash execution, codebase exploration) require the model to
-make structured function calls. **None of the current Ollama-served models support
-function calling** — Ollama rejects tool-enabled requests for all three models:
+OpenCode's agentic capabilities (file edits, bash execution, codebase exploration)
+require structured function/tool calls. Use the `-tools` suffix aliases to route to the
+llama.cpp backends, which support function calling via Jinja2 chat templates:
 
-| Model | Tools supported |
-|-------|----------------|
-| qwen2.5-coder:32b | No |
-| deepseek-r1:32b | No |
-| llama3.3:70b | No |
+```bash
+# Start the llama.cpp backend first (run on HAL-10k)
+docker compose -f /srv/platform/repos/hal-10k-platform/compose/ai-tools/docker-compose.yml \
+  up -d llama-cpp-qwen32b
 
-This is an Ollama-level constraint, not a client issue. Both OpenCode and Claude Code
-are affected equally. Until Ollama adds tool/function calling support for these models,
-local models are limited to **chat and code generation only**.
+# Use the -tools alias for agentic sessions
+opencode --model hal/qwen2.5-coder:32b-tools
+```
+
+| Model alias | Backend | Tool calling |
+|-------------|---------|-------------|
+| `qwen2.5-coder:32b` | Ollama | No |
+| `qwen2.5-coder:32b-tools` | llama.cpp | **Yes** |
+| `deepseek-r1:32b` | Ollama | No |
+| `deepseek-r1:32b-tools` | llama.cpp | **Yes** |
+| `llama3.3:70b` | Ollama | No |
+| `llama3.3:70b-tools` | llama.cpp | **Yes** |
+
+> **Note:** The llama.cpp backends in `compose/ai-tools/` are not auto-started.
+> Start them on demand before agentic sessions and stop them when done to free VRAM.
+> See [VRAM budget notes](gguf-model-setup.md#vram-budget) for multi-model constraints.
+> The 70B model requires stopping the 32B containers first.
 
 ---
 

@@ -49,3 +49,22 @@ scrape_configs:
   # - job_name: rocm-gpu
   #   static_configs:
   #     - targets: ["rocm-exporter:9400"]
+
+  # ── llama.cpp inference metrics (compose/ai-tools/) ──────────────────────────
+  # Each llama.cpp container exposes Prometheus metrics at /metrics on port 8080.
+  # Containers join observability_internal when running (see compose/ai-tools/).
+  # Targets marked DOWN when a container is stopped — recovers automatically on restart.
+  # Key metrics: llamacpp:prompt_tokens_total, llamacpp:tokens_predicted_total,
+  #              llamacpp:kv_cache_usage_ratio, llamacpp:requests_processing,
+  #              llamacpp:prompt_seconds_total
+  - job_name: llama-cpp-qwen32b
+    static_configs:
+      - targets: ["llama-cpp-qwen32b:8080"]
+
+  - job_name: llama-cpp-deepseek32b
+    static_configs:
+      - targets: ["llama-cpp-deepseek32b:8080"]
+
+  - job_name: llama-cpp-llama70b
+    static_configs:
+      - targets: ["llama-cpp-llama70b:8080"]

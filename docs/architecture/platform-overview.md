@@ -72,13 +72,18 @@
      ┌──────▼───────────────────▼─────┐
      │         LiteLLM Proxy           │  :4000
      │  (model routing + rate limit)   │
-     └──────────────┬─────────────────┘
-                    │
-           ┌────────▼──────────┐
-           │  Ollama           │  :11434
-           │  (GPU inference)  │
-           │  ROCm / RDNA 3.5  │
-           └───────────────────┘
+     └──────┬──────────────────────────┘
+            │
+   ┌────────┴──────────────────────────────────────────┐
+   │                                                   │
+   ▼  compose/ai                            compose/ai-tools (optional)
+   ┌────────────────────┐          ┌─────────────────────────────────────┐
+   │  Ollama  :11434    │          │  llama.cpp containers (ROCm)        │
+   │  (GPU inference)   │          │  llama-cpp-qwen32b     :8080        │
+   │  ROCm / RDNA 3.5   │          │  llama-cpp-deepseek32b :8080        │
+   └────────────────────┘          │  llama-cpp-llama70b    :8080        │
+                                   │  (one per model, function-calling)  │
+                                   └─────────────────────────────────────┘
 
      ┌─────────────────────┐
      │  ChromaDB           │  :8000
@@ -91,17 +96,40 @@
      └─────────────────────┘    └────────────────┘
 ```
 
+### Compose Stack Inventory
+
+| Stack | Path | Purpose | Always-on |
+|-------|------|---------|-----------|
+| `core` | `compose/core/` | Traefik reverse proxy | Yes |
+| `ai` | `compose/ai/` | Ollama + LiteLLM + Open WebUI | Yes |
+| `data` | `compose/data/` | ChromaDB vector store | Yes |
+| `workflows` | `compose/workflows/` | n8n automation | Yes |
+| `observability` | `compose/observability/` | Prometheus + Loki + Grafana | Yes |
+| `ai-tools` | `compose/ai-tools/` | llama.cpp function-calling servers | Optional |
+
 ---
 
-## Model Roster (Planned)
+## Model Roster
 
-| Model | Size | Role | RAM footprint |
-|-------|------|------|---------------|
-| Qwen2.5-Coder-32B | 32B | Code generation | ~22 GB |
-| DeepSeek-Coder-33B | 33B | Reasoning / analysis | ~23 GB |
-| Llama-3.3-70B | 70B | General / architecture | ~48 GB |
+### Ollama (compose/ai) — chat + embeddings
 
-Total concurrent footprint: ~93 GB (within 128 GB unified RAM).
+| Model | Size | Role |
+|-------|------|------|
+| qwen2.5-coder:32b | 32B | Code chat via Open WebUI / Claude Code |
+| deepseek-r1:32b | 32B | Reasoning chat |
+| nomic-embed-text | 137M | Embeddings |
+
+### llama.cpp (compose/ai-tools) — function calling
+
+| Model file | Size | Role | VRAM (weights+KV) |
+|-----------|------|------|-------------------|
+| Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf | 32B | Code generation + tool calling | ~23 GB |
+| DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf | 32B | Reasoning + tool calling | ~23 GB |
+| Llama-3.3-70B-Instruct-Q4_K_M.gguf | 70B | General instruction + tool calling | ~45 GB (solo only) |
+
+**VRAM budget**: ROCm-accessible VRAM is ~56 GB (see [ADR-0012](../decisions/adr/ADR-0012-vram-allocation-limits-amd-radeon-8060s.md)).
+Both 32B llama.cpp containers can run concurrently (~46 GB). The 70B model requires
+stopping the 32B containers first.
 
 ---
 
@@ -146,6 +174,7 @@ need external access declare it as external and attach their service containers 
 | Portainer | 9443 | LAN | Direct host bind |
 | Dockge | 5001 | LAN | Direct host bind |
 | Ollama | 11434 | Internal | No host bind; LiteLLM only |
+| llama.cpp × 3 | 8080 | Internal | No host bind; unique container hostnames on `ai_internal`; LiteLLM only |
 | LiteLLM | 4000 | Traefik | `https://litellm.hal.local` |
 | Open WebUI | 3000 | Traefik | `https://openwebui.hal.local` |
 | ChromaDB | 8000 | Internal | No host bind; pipeline services only |

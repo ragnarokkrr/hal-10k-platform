@@ -34,6 +34,7 @@ Update this file whenever a new service is added or a port changes.
 | 5678 | TCP | n8n | `compose/workflows` | `n8n.hal.local` | Via Traefik |
 | 8000 | TCP | ChromaDB | `compose/data` | — | Internal only |
 | 3001 | TCP | Gitea | `compose/gitea` | `gitea.hal.local` | Via Traefik |
+| 8080 | TCP | llama.cpp × N | `compose/ai-tools` | — | Internal only (multiple containers, same port, unique hostnames) |
 
 ---
 

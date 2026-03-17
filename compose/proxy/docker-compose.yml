@@ -32,6 +32,7 @@ services:
 
     volumes:
       - ./litellm-config.yaml:/app/config.yaml:ro
+      - ./tool_choice_hook.py:/app/tool_choice_hook.py:ro
 
     # Reachable on ai_internal (Ollama backend) and traefik (Traefik routing).
     # Port 4000 is NOT mapped to the host.
